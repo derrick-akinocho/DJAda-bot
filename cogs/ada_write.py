@@ -30,10 +30,10 @@ class AdaWrite(commands.Cog):
     @has_adawrite_role()
     @app_commands.describe(text="The message you want the bot to send")
     async def adawrite(self, interaction: discord.Interaction, text: str):
-        # Réponse éphémère pour éviter le spam
-        await interaction.response.send_message("Message envoyé !", ephemeral=True)
         
-        # Envoie le message dans le salon ou thread actuel
+        await interaction.response.send_message(".", ephemeral=True)
+        await interaction.delete_original_response()
+
         if isinstance(interaction.channel, discord.TextChannel) or isinstance(interaction.channel, discord.Thread):
             await interaction.channel.send(text)
         else:

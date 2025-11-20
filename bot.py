@@ -77,6 +77,9 @@ class ModmailBot(commands.Bot):
         self.config.populate_cache()
 
         intents = discord.Intents.all()
+        intents.message_content = True
+        intents.members = True
+        intents.guilds = True
         if not self.config["enable_presence_intent"]:
             intents.presences = False
 
@@ -84,7 +87,7 @@ class ModmailBot(commands.Bot):
         self.session = None
         self._api = None
         self.formatter = SafeFormatter()
-        self.loaded_cogs = ["cogs.modmail", "cogs.plugins", "cogs.utility", "cogs.ada_write"]
+        self.loaded_cogs = ["cogs.modmail", "cogs.plugins", "cogs.utility", "cogs.ada_write", "cogs.ada_welcome"]
         self._connected = None
         self.start_time = discord.utils.utcnow()
         self._started = False
