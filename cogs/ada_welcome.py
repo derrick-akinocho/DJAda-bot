@@ -135,7 +135,7 @@ class WelcomeSystem(commands.Cog):
         embed = discord.Embed(
             title=f"<:Emoji_Wow_Imugi:1430608430212714618> Welcome {member.mention}!",
             description="Glad to have you here!",
-            color=member.accent_color or discord.Color.blue()
+            color=0xef87ff
         )
         embed.set_image(url="attachment://welcome.png")
 
