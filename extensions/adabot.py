@@ -1,28 +1,22 @@
-import discord
+# adabot.py
+
 from discord.ext import commands
-import os, asyncio
-from dotenv import load_dotenv
+import os
 
-load_dotenv()
+class Ada(commands.Cog):
+    def __init__(self, bot):
+        self.bot = bot
 
-intents = discord.Intents.default()
-intents.message_content = True
-bot = commands.Bot(command_prefix="!", intents=intents)
+    @commands.command()
+    async def ping2(self, ctx):
+        await ctx.send("Pong depuis Ada !")
 
-async def load_games():
-    for filename in os.listdir("./adacogs"):
-        if filename.endswith(".py") and filename != "__init__.py":
-            await bot.load_extension(f"adacogs.{filename[:-3]}")
-            print(f"🎮 Loaded: {filename[:-3]}")
+async def setup(bot):
+    # Ajouter le cog principal
+    await bot.add_cog(Ada(bot))
 
-@bot.event
-async def on_ready():
-    await bot.tree.sync()
-    print(f"✅ Logged in as {bot.user}")
-
-async def main():
-    async with bot:
-        await load_games()
-        await bot.start(os.getenv("TOKEN"))
-
-asyncio.run(main())
+    # Charger tous les cogs du dossier adacogs
+    if os.path.isdir("./adacogs"):
+        for filename in os.listdir("./adacogs"):
+            if filename.endswith(".py") and filename != "__init__.py":
+                await bot.load_extension(f"adacogs.{filename[:-3]}")
