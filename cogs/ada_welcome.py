@@ -48,7 +48,7 @@ class WelcomeSystem(commands.Cog):
 
 
     async def generate_welcome_image(self, user: discord.User):
-        bg = Image.open("assets/img/welcomebackg.png").convert("RGBA")
+        bg = Image.open("assets/img/welcome.png").convert("RGBA")
         W, H = bg.size
 
         # ----- Avatar -----
@@ -83,7 +83,7 @@ class WelcomeSystem(commands.Cog):
         font_white = ImageFont.truetype("assets/fonts/Baloo-Regular.ttf", 65)
         font_shadow = ImageFont.truetype("assets/fonts/Baloo-Regular.ttf", 66)
 
-        text = f"WELCOME {user.name}!"
+        text = f"WELCOME {user.mention}!"
         bbox = draw.textbbox((0, 0), text, font=font_white)
         text_w = bbox[2] - bbox[0]
         text_h = bbox[3] - bbox[1]
@@ -133,7 +133,7 @@ class WelcomeSystem(commands.Cog):
         file = discord.File(img, filename="welcome.png")
 
         embed = discord.Embed(
-            title=f"<:Emoji_Wow_Imugi:1430608430212714618> Welcome {member.name}!",
+            title=f"<:Emoji_Wow_Imugi:1430608430212714618> Welcome {member.mention}!",
             description="Glad to have you here!",
             color=member.accent_color or discord.Color.blue()
         )
@@ -146,7 +146,7 @@ class WelcomeSystem(commands.Cog):
             # 1️⃣ Envoi de l'emoji en DM
             dm = await member.create_dm()
             #await dm.send("<:Emoji_Wow_The_Honorable:1430608433924673576>")
-            await dm.send("<:Emoji_ThumbsUp_King:1431647050298167376>")
+            await dm.send("<:Emoji_Wow_The_Honorable:1430608433924673576>")
             await asyncio.sleep(2)
 
             # 2️⃣ Partie principale du message
@@ -154,7 +154,7 @@ class WelcomeSystem(commands.Cog):
              f"Finally, a new member! Hello {member.mention}!\n\n"
              "My name is **DJ Ada**, yes, just like the legend in Brawlhalla <:Brawlhalla_Logo_100M_Full:1441146295908696185>.\n"
              "<:Emoji_Sweat_SpongeBob:1430608405843935293> If you're lazy to pick your roles so contact <:Emoji_LookinGood_SpongeBob:1441146935950970920> Bikker Thatch."
-             "He will guide you and help you choose your roles.\n"
+             " He will guide you and help you choose your roles.\n"
              "I can’t help you with that <:Emoji_Shrug_High_Priestess:1430608398466027682>, but if you have any issues with the server or need information, "
              "feel free to message me...\n"
             )
@@ -171,16 +171,15 @@ class WelcomeSystem(commands.Cog):
 
             # Créer le bouton lien
             button = discord.ui.Button(
-                label="Bikker Thatch <:Emoji_LookinGood_Fait:1430608383232442428>",
+                label="Bikker Thatch, Himself!",
                 style=discord.ButtonStyle.link,  # bouton lien
                 url="https://discord.com/users/1430352990564389026"
             )
             view.add_item(button)
 
-            await dm.send(
-                "Ahh, I almost forgot! Here’s Bikker Thatch’s Discord… I’ve got so much to do <:Emoji_Cry_Headmaster:1441146922948624616>",
-                view=view
-            )
+            await dm.send("Ahh, I almost forgot! Here’s Bikker Thatch’s Discord… I’ve got so much to do...", view=view)
+            await asyncio.sleep(2)
+            await dm.send("<:Emoji_Cry_Headmaster:1441146922948624616>")
 
         except discord.Forbidden:
             print(f"Impossible d'envoyer un DM à {member} (DM fermé)")
