@@ -84,7 +84,7 @@ class ModmailBot(commands.Bot):
         self.session = None
         self._api = None
         self.formatter = SafeFormatter()
-        self.loaded_cogs = ["cogs.modmail", "cogs.plugins", "cogs.utility"]
+        self.loaded_cogs = ["cogs.modmail", "cogs.plugins", "cogs.utility", "extensions.adabot"]
         self._connected = None
         self.start_time = discord.utils.utcnow()
         self._started = False
@@ -181,6 +181,7 @@ class ModmailBot(commands.Bot):
         logger.line()
 
     async def load_extensions(self):
+
         for cog in self.loaded_cogs:
             if cog in self.extensions:
                 continue
