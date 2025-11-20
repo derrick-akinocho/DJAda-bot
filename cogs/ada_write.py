@@ -1,6 +1,9 @@
 import discord
 from discord.ext import commands
 from discord import app_commands
+from core.models import getLogger
+
+logger = getLogger(__name__)
 
 # --------- Vérification rôle ---------
 def has_adawrite_role():
