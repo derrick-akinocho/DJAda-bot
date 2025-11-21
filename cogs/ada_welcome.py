@@ -5,6 +5,7 @@ from PIL import Image, ImageDraw, ImageFont
 from pymongo import MongoClient
 import io
 import os
+import config
 import asyncio
 from datetime import datetime, timezone
         
@@ -12,13 +13,13 @@ class WelcomeSystem(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.enabled = True
-        self.channel_id = 1372146725455794206
+        self.channel_id = config.WELCOME_CHANNEL_ID
         print("✅ WelcomeSystem loaded and activated automatically")
 
         # Bd Mongo
-        self.client = MongoClient(os.getenv("MONGO_URI"))
-        self.db = self.client["welcome"]
-        self.stats_collection = self.db["members"]
+        self.client = MongoClient(config.MONGO_URI)
+        self.db = self.client[config.DATABASE_NAME]
+        self.stats_collection = self.db[config.COLLECTION_STATS]
 
     async def add_member_to_db(self, member: discord.Member):
         """Enregistre un membre dans MongoDB et renvoie True si nouveau membre"""
