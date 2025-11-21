@@ -84,7 +84,7 @@ class WelcomeSystem(commands.Cog):
         font_white = ImageFont.truetype("assets/fonts/Baloo-Regular.ttf", 65)
         font_shadow = ImageFont.truetype("assets/fonts/Baloo-Regular.ttf", 66)
 
-        text = f"WELCOME {user.mention}!"
+        text = f"WELCOME {user.display_name}!"
         bbox = draw.textbbox((0, 0), text, font=font_white)
         text_w = bbox[2] - bbox[0]
         text_h = bbox[3] - bbox[1]
@@ -134,7 +134,7 @@ class WelcomeSystem(commands.Cog):
         file = discord.File(img, filename="welcome.png")
 
         embed = discord.Embed(
-            title=f"<:Emoji_Wow_Imugi:1430608430212714618> Welcome {member.mention}!",
+            title=f"<:Emoji_Wow_Imugi:1430608430212714618> Welcome {member.display_name}!",
             description="Glad to have you here!",
             color=0xef87ff
         )
