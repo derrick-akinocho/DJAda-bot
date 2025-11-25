@@ -39,6 +39,7 @@ class WelcomeSystem(commands.Cog):
             "user_id": member.id,
             "username": member.name,
             "discriminator": member.discriminator,
+            "mention": member.mention,
             "joined_at": datetime.now(timezone.utc),
             "guild_id": member.guild.id
         }
