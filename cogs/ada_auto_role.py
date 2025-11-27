@@ -80,15 +80,15 @@ class AutoRoleSystem(commands.Cog):
                     await self.add_pending_user(member)
         print("✅ Backfill done: all existing members added to pending roles")
 
-    @tasks.loop(minutes=2)
+    @tasks.loop(minutes=20)
     async def check_pending_roles(self):
         """Check if a user reached 7 days or 1 year."""
         if not self.enabled:
             return
 
         now = datetime.now(timezone.utc)
-        seven_days = timedelta(minutes=1)
-        one_year = timedelta(minutes=2)
+        seven_days = timedelta(days=7)
+        one_year = timedelta(days=364)
 
         docs = list(self.collection.find({}))
         if not docs:
@@ -128,11 +128,11 @@ class AutoRoleSystem(commands.Cog):
                     if announcement_channel:
                         embed = discord.Embed(
                             title="Whoop whoop! New Achievement!",
-                            description=f"Hey {member.mention}, you survived **7 days** in Bleeding Legend ccommunity! \nHere’s your **Junior** role – wear it with pride!",
+                            description=f"Hey {member.mention}, you survived **7 days** in Bleeding Legend ccommunity! \nHere’s your **Junior** role, wear it with pride!",
                             color=0xef87ff)
                         embed.set_thumbnail(url=member.display_avatar.url)
                         embed.set_image(url=Emojis.link_wp_gif)
-                        embed.set_footer(text="Keep rocking the server <:Emoji_Heart_Metadev:1441146933438845081>!")
+                        embed.set_footer(text="Keep rocking the server 💖!")
                         await announcement_channel.send(embed=embed)
 
             # ---------- 1 YEAR ROLE ----------
