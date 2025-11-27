@@ -56,7 +56,7 @@ class StreamNotifySystem(commands.Cog):
             description=f"**{title}**\nhttps://youtu.be/{video_id}",
             color=0xff5353
         )
-        await announce_channel.send("<@1388172157846028539>", embed=embed)
+        await announce_channel.send("<@&1388172157846028539>", embed=embed)
 
         self.youtube_col.update_one(
             {"channel_id": channel_id},
@@ -112,7 +112,7 @@ class StreamNotifySystem(commands.Cog):
                 description=f"**{streamer}** on Twitch : {title} \n{url_stream}",
                 color=0xff5353
             )
-            await announce_channel.send("<@1388172157846028539>", embed=embed)
+            await announce_channel.send("<@&1388172157846028539>", embed=embed)
             self.twitch_col.update_one(
                 {"streamer": streamer},
                 {"$set": {"live": True, "last_checked": datetime.now(timezone.utc)}},
