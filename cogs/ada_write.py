@@ -45,7 +45,7 @@ class AdaWrite(commands.Cog):
     @adawrite.error
     async def adawrite_error(self, interaction: discord.Interaction, error):
         if isinstance(error, app_commands.CheckFailure):
-            await interaction.response.send_message("🚫 You don’t have permission to use this command.", ephemeral=True)
+            await interaction.response.send_message("<:Emoji_Shrug_Street_Sovereign:1441146941172875385> You don’t have permission.", ephemeral=True)
         else:
             await interaction.response.send_message(f"❌ An error occurred: {error}", ephemeral=True)
 

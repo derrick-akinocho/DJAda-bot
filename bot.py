@@ -87,7 +87,7 @@ class ModmailBot(commands.Bot):
         self.session = None
         self._api = None
         self.formatter = SafeFormatter()
-        self.loaded_cogs = ["cogs.modmail", "cogs.plugins", "cogs.utility", "cogs.ada_write", "cogs.ada_welcome"]
+        self.loaded_cogs = ["cogs.modmail", "cogs.plugins", "cogs.utility", "cogs.ada_write", "cogs.ada_welcome", "cogs.ada_auto_role"]
         self._connected = None
         self.start_time = discord.utils.utcnow()
         self._started = False
