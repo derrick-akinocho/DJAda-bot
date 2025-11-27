@@ -54,9 +54,9 @@ class StreamNotifySystem(commands.Cog):
         embed = discord.Embed(
             title="👀 Come to See Thе Good in Me!",
             description=f"**{title}**\nhttps://youtu.be/{video_id}",
-            color=0xef87ff
+            color=0xff5353
         )
-        await announce_channel.send("@Brawler", embed=embed)
+        await announce_channel.send("<@1388172157846028539>", embed=embed)
 
         self.youtube_col.update_one(
             {"channel_id": channel_id},
@@ -109,10 +109,10 @@ class StreamNotifySystem(commands.Cog):
             url_stream = f"https://twitch.tv/{streamer}"
             embed = discord.Embed(
                 title=" Come to play and bleed🩸",
-                description=f"**{streamer}** Live: **{title}**\n{url_stream}",
-                color=discord.Color.purple()
+                description=f"**{streamer}** on Twitch : {title} \n{url_stream}",
+                color=0xff5353
             )
-            await announce_channel.send("@Brawler", embed=embed)
+            await announce_channel.send("<@1388172157846028539>", embed=embed)
             self.twitch_col.update_one(
                 {"streamer": streamer},
                 {"$set": {"live": True, "last_checked": datetime.now(timezone.utc)}},
