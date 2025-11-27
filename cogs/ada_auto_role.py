@@ -128,7 +128,7 @@ class AutoRoleSystem(commands.Cog):
                     if announcement_channel:
                         embed = discord.Embed(
                             title="Whoop whoop! New Achievement!",
-                            description=f"Hey {member.mention}, you survived **7 days** in Bleeding Legend ccommunity! \nHere’s your **Junior** role, wear it with pride!",
+                            description=f"Hey {member.mention}, you survived **7 days** in Bleeding Legend 💖 ccommunity! \nHere’s your **Junior** role, wear it with pride!",
                             color=0xef87ff)
                         embed.set_thumbnail(url=member.display_avatar.url)
                         embed.set_image(url=Emojis.link_wp_gif)
