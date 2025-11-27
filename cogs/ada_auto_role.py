@@ -25,7 +25,7 @@ class AutoRoleSystem(commands.Cog):
 
     async def add_pending_user(self, member: discord.Member):
         """Store join date for future role checks."""
-        if member.bot:  # Ignore bots
+        if member.bot:
             return False
 
         existing = self.collection.find_one({
@@ -34,7 +34,16 @@ class AutoRoleSystem(commands.Cog):
         })
 
         if existing:
-            return False
+            self.collection.update_one(
+                {"_id": existing["_id"]},
+                {"$set": {
+                    "join_date": datetime.now(timezone.utc),
+                    "seven_days_done": False,
+                    "one_year_done": False
+                }}
+            )
+            print(f"🔄 Member rejoined, join date reset: {member.name}")
+            return True
 
         self.collection.insert_one({
             "user_id": member.id,
@@ -70,7 +79,7 @@ class AutoRoleSystem(commands.Cog):
                     await self.add_pending_user(member)
         print("✅ Backfill done: all existing members added to pending roles")
 
-    @tasks.loop(minutes=10)
+    @tasks.loop(minutes=3)
     async def check_pending_roles(self):
         """Check if a user reached 7 days or 1 year."""
         if not self.enabled:
@@ -85,7 +94,7 @@ class AutoRoleSystem(commands.Cog):
             return
 
         for doc in docs:
-            
+
             join_date = doc["join_date"]
             if join_date.tzinfo is None:
                 join_date = join_date.replace(tzinfo=timezone.utc)
