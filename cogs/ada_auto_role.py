@@ -85,7 +85,11 @@ class AutoRoleSystem(commands.Cog):
             return
 
         for doc in docs:
+            
             join_date = doc["join_date"]
+            if join_date.tzinfo is None:
+                join_date = join_date.replace(tzinfo=timezone.utc)
+            
             guild = self.bot.get_guild(doc["guild_id"])
             if not guild:
                 continue
