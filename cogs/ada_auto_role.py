@@ -4,6 +4,7 @@ from discord import app_commands
 from pymongo import MongoClient
 from datetime import datetime, timezone, timedelta
 import config
+from res.emojis import Emojis
 
 class AutoRoleSystem(commands.Cog):
     def __init__(self, bot):
@@ -117,11 +118,22 @@ class AutoRoleSystem(commands.Cog):
                             print(f"🎉 7-day role assigned to {member.name}")
                         except Exception as e:
                             print(f"⚠️ Failed to assign 7-day role: {e}")
-
+                    
                     self.collection.update_one(
                         {"_id": doc["_id"]},
                         {"$set": {"seven_days_done": True}}
                     )
+
+                    announcement_channel = guild.get_channel(config.XP_CHANNEL_ID)
+                    if announcement_channel:
+                        embed = discord.Embed(
+                            title="Whoop whoop! New Achievement!",
+                            description=f"Hey {member.mention}, you survived **7 days** in Bleeding Legend ccommunity! \nHere’s your **Junior** role – wear it with pride!",
+                            color=0xef87ff)
+                        embed.set_thumbnail(url=member.display_avatar.url)
+                        embed.set_image(url=Emojis.link_wp_gif)
+                        embed.set_footer(text="Keep rocking the server <:Emoji_Heart_Metadev:1441146933438845081>!")
+                        await announcement_channel.send(embed=embed)
 
             # ---------- 1 YEAR ROLE ----------
             if not doc.get("one_year_done", False):
@@ -138,6 +150,17 @@ class AutoRoleSystem(commands.Cog):
                         {"_id": doc["_id"]},
                         {"$set": {"one_year_done": True}}
                     )
+
+                    announcement_channel = guild.get_channel(config.XP_CHANNEL_ID)
+                    if announcement_channel:
+                        embed = discord.Embed(
+                            title="💖 Such a lover! 💖",
+                            description=f"Wow {member.mention}! You survived **1 whole year**!\nYou just got the **I'm_stil_HERE** role!",
+                            color=0xef87ff)
+                        embed.set_thumbnail(url=member.display_avatar.url)
+                        embed.set_image(url=Emojis.link_heart_gif)
+                        embed.set_footer(text="Thanks for staying awesome! 💖")
+                        await announcement_channel.send(embed=embed)
 
     @check_pending_roles.before_loop
     async def before_check(self):

@@ -1,0 +1,45 @@
+[
+    {
+  "legend": "Ada",
+  "cheat_codes": [
+    {
+      "name": "Fatal Error",
+      "rarity": "Common",
+      "effect": "Provides a hint for the current question to reduce errors",
+      "limit": "Lasts 1 week",
+      "timing": "after",
+      "command": "?use datamine",
+      "bot_text": "📡 Datamine activated: here is a hint for the current question."
+    },
+    {
+      "name": "Thunder Bass",
+      "rarity": "Rare",
+      "effect": "Multiplies points by 1.5 if your answer is correct",
+      "limit": "Lasts 1 week",
+      "timing": "before",
+      "command": "?use echopred",
+      "bot_text": "🔮 Echo Prediction activated: your points will be multiplied if your answer is correct."
+    },
+    {
+      "name": "The Consequences",
+      "rarity": "Epic",
+      "effect": "Halves the points of the daily question for other players",
+      "limit": "Lasts 1 week",
+      "timing": "before",
+      "command": "?use pointdrain",
+      "bot_text": "⚡ Point Drain activated: points for other players are halved."
+    },
+    {
+      "name": "Vixen",
+      "rarity": "Legendary",
+      "effect": "Hides the points of the next daily question from other players",
+      "limit": "Lasts 2 weeks",
+      "timing": "before",
+      "command": "?use shadowveil",
+      "bot_text": "🕶️ Shadow Veil activated: points of the next question are hidden from other players."
+    }
+  ]
+}
+
+
+]
