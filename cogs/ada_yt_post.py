@@ -3,6 +3,7 @@ import discord
 from discord.ext import commands, tasks
 from pymongo import MongoClient
 import aiohttp
+from res.emojis import Emojis
 from datetime import datetime, timezone
 import config
 
@@ -54,8 +55,7 @@ class StreamNotifySystem(commands.Cog):
         embed = discord.Embed(
             title="👀 Come to See Thе Good in Me!",
             description=f"**{title}**\nhttps://youtu.be/{video_id}",
-            color=0xff5353
-        )
+            color=0xff5353)
         await announce_channel.send("<@&1388172157846028539>", embed=embed)
 
         self.youtube_col.update_one(
@@ -112,6 +112,7 @@ class StreamNotifySystem(commands.Cog):
                 description=f"**{streamer}** on Twitch : {title} \n{url_stream}",
                 color=0xff5353
             )
+            embed.set_image(url=Emojis.link_nix_rage_gif)
             await announce_channel.send("<@&1388172157846028539>", embed=embed)
             self.twitch_col.update_one(
                 {"streamer": streamer},

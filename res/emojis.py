@@ -20,6 +20,8 @@ class Emojis:
     link_star = "https://i.ibb.co/4R9M6TZz/THATCH-Biker-Thatch-Classic-Colors-Emote-Wishona-Star-Original-Original-57-336x309.png"
     link_wp_gif = "https://i.ibb.co/KjWkPZhV/Emoji-WP-Elder-Wild.gif"
     link_heart_gif = "https://i.ibb.co/Q3T8XSbV/Emoji-Heart-Ascendant.gif"
+    link_ada_rest_gif = "https://i.ibb.co/RGhvcsqM/ADA-DJAda-Lovestruck-Emote-For-Rest-Original-Original-loop-100p-Anim.gif"
+    link_nix_rage_gif = "https://i.ibb.co/xSS8qCFz/Emoji-Rage-Retro-Reaper.png"
 
     # Emojis Discord custom
     thumbsUp = "<:Emoji_ThumbsUp_King:1432396967752896512>"
