@@ -79,15 +79,15 @@ class AutoRoleSystem(commands.Cog):
                     await self.add_pending_user(member)
         print("✅ Backfill done: all existing members added to pending roles")
 
-    @tasks.loop(minutes=3)
+    @tasks.loop(minutes=2)
     async def check_pending_roles(self):
         """Check if a user reached 7 days or 1 year."""
         if not self.enabled:
             return
 
         now = datetime.now(timezone.utc)
-        seven_days = timedelta(days=2)
-        one_year = timedelta(days=3)
+        seven_days = timedelta(minutes=1)
+        one_year = timedelta(minutes=2)
 
         docs = list(self.collection.find({}))
         if not docs:
