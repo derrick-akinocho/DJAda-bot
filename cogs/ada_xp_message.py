@@ -113,7 +113,10 @@ class XPSystem(commands.Cog):
             embed.add_field(name="Life", value=f"{life}/{self.NUM_LIVES}", inline=True)
             embed.add_field(name="XP", value=f"{new_xp} / {self.XP_LEVELS.get(str(level), '???')}", inline=False)
             embed.set_footer(text=f"{message.author.display_name}")
-            await message.channel.send(embed=embed)
+            
+            announce_channel = self.bot.get_channel(config.XP_CHANNEL_ID)
+            await announce_channel.send(embed=embed)
+
 
 
 async def setup(bot):
