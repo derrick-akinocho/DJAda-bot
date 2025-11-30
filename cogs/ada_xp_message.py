@@ -247,9 +247,53 @@ class XPSystem(commands.Cog):
             await embedLvlUp(self=self,
                 channel=announce_channel,
                 user=message.author,
-                xp={new_xp} / {self.XP_LEVELS.get(str(level), '???')},
-                level={display_level}/{self.MAX_LEVEL_PER_LIFE}, life={life}/{self.NUM_LIVES}
+                xp=f"{new_xp}/{self.XP_LEVELS.get(str(level), '???')}",
+                level=f"{display_level}/{self.MAX_LEVEL_PER_LIFE}",
+                life=f"{life}/{self.NUM_LIVES}"
             )
+
+    # --- SLASH COMMAND: DISPLAY XP PROFILE ---
+    @app_commands.command(name="bl_xp_profile", description="Displays your XP profile.")
+    async def bl_xp_profile(self, interaction: discord.Interaction):
+
+        await interaction.response.defer()
+
+        user_id = str(interaction.user.id)
+
+        # Fetch from MongoDB
+        user_data = self.xp_col.find_one({"_id": user_id})
+
+        if not user_data:
+            return await interaction.followup.send(
+                "<:Emoji_Sweat:1430608404816330842> Your XP profile doesn't exist, are you a Ghost ???",
+                ephemeral=True
+            )
+
+        # MongoDB data
+        xp = user_data["xp"]
+        level = user_data["level"]
+        life = user_data["life"]
+
+        # Level override (cosmetic level skin)
+        display_level = user_data.get("code_lvl") or level
+
+        # Formatted text
+        xp_text = f"{xp}/{self.XP_LEVELS.get(str(level), '???')}"
+        level_text = f"{display_level}/{self.MAX_LEVEL_PER_LIFE}"
+        life_text = f"{life}/{self.NUM_LIVES}"
+
+        # Send XP card
+        await embedLvlUp(
+            self=self,
+            channel=interaction.channel,
+            user=interaction.user,
+            xp=xp_text,
+            level=level_text,
+            life=life_text
+        )
+
+        # Silent confirmation
+        await interaction.followup.send("📌 XP profile displayed.", ephemeral=True)
 
 async def setup(bot):
     await bot.add_cog(XPSystem(bot))
