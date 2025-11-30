@@ -118,7 +118,9 @@ async def embedLvlUp(self, channel, user, xp, level, life):
     img.save(buffer, format="PNG")
     buffer.seek(0)
 
-    await channel.send(file=discord.File(buffer, "xp_card.png"))
+    await channel.send(
+        content=f"<:Emoji_1More_Goldforged:1430608366031474710> {user.mention} 1 More! keep rising!",
+        file=discord.File(buffer, "xp_card.png"))
 
 class XPSystem(commands.Cog):
     def __init__(self, bot):
@@ -239,7 +241,7 @@ class XPSystem(commands.Cog):
 
         # Send embed only for key levels or life-up
         if leveled_up and (level in self.NOTIFY_LEVELS or life_up):
-            
+
             announce_channel = self.bot.get_channel(config.XP_CHANNEL_ID)
 
             await embedLvlUp(self=self,
