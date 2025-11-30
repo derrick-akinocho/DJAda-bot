@@ -292,8 +292,5 @@ class XPSystem(commands.Cog):
             life=life_text
         )
 
-        # Silent confirmation
-        await interaction.followup.send("📌 XP profile displayed.", ephemeral=True)
-
 async def setup(bot):
     await bot.add_cog(XPSystem(bot))
