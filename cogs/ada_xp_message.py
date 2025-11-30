@@ -247,9 +247,9 @@ class XPSystem(commands.Cog):
             await embedLvlUp(self=self,
                 channel=announce_channel,
                 user=message.author,
-                xp=f"{new_xp}/{self.XP_LEVELS.get(str(level), '???')}",
-                level=f"{display_level}/{self.MAX_LEVEL_PER_LIFE}",
-                life=f"{life}/{self.NUM_LIVES}"
+                xp=f"{new_xp} / {self.XP_LEVELS.get(str(level), '???')}",
+                level=f"{display_level} / {self.MAX_LEVEL_PER_LIFE}",
+                life=f"{life} / {self.NUM_LIVES}"
             )
 
     # --- SLASH COMMAND: DISPLAY XP PROFILE ---
@@ -278,9 +278,9 @@ class XPSystem(commands.Cog):
         display_level = user_data.get("code_lvl") or level
 
         # Formatted text
-        xp_text = f"{xp}/{self.XP_LEVELS.get(str(level), '???')}"
-        level_text = f"{display_level}/{self.MAX_LEVEL_PER_LIFE}"
-        life_text = f"{life}/{self.NUM_LIVES}"
+        xp_text = f"{xp} / {self.XP_LEVELS.get(str(level), '???')}"
+        level_text = f"{display_level} / {self.MAX_LEVEL_PER_LIFE}"
+        life_text = f"{life} / {self.NUM_LIVES}"
 
         # Send XP card
         await embedLvlUp(
