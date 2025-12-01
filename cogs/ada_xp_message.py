@@ -58,7 +58,7 @@ async def embedLvlUp(self, channel, user, xp, level, life):
     # -------------------------------------------------------------------
     #                         PSEUDO CENTRÉ
     # -------------------------------------------------------------------
-    name_text = truncate_username(user.display_name, 10)
+    name_text = truncate_username(user.display_name, 15)
     bbox = draw.textbbox((0, 0), name_text, font=font_title)
     name_width = bbox[2] - bbox[0]
     text_y = avatar_y + total_size + 5
@@ -253,7 +253,7 @@ class XPSystem(commands.Cog):
             )
 
     # --- SLASH COMMAND: DISPLAY XP PROFILE ---
-    @app_commands.command(name="bl_xp_profile", description="Displays your XP profile.")
+    @app_commands.command(name="bl_xp_card", description="Displays your XP profile.")
     async def bl_xp_profile(self, interaction: discord.Interaction):
 
         await interaction.response.defer()
@@ -282,6 +282,8 @@ class XPSystem(commands.Cog):
         level_text = f"{display_level} / {self.MAX_LEVEL_PER_LIFE}"
         life_text = f"{life} / {self.NUM_LIVES}"
 
+        await interaction.followup.send("Generating your XP card...", ephemeral=True)
+        
         # Send XP card
         await embedLvlUp(
             self=self,
