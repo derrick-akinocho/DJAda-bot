@@ -139,7 +139,7 @@ async def embedLvlUp(self, channel, user, xp, level, life, cmd):
     draw_white_emboss(draw, x_value, base_y + spacing, f"{level}", font_text)
 
     # LIFE
-    draw_gold_text(draw, x_title, base_y + spacing * 2, "Life", font_title)
+    draw_gold_text(draw, x_title, base_y + spacing * 2, "Lifes", font_title)
     draw_white_emboss(draw, x_value, base_y + spacing * 2, f"{life}", font_text)
 
     # -------------------------------------------------------------------
