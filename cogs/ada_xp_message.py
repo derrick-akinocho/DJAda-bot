@@ -7,7 +7,37 @@ from pymongo import MongoClient
 from PIL import Image, ImageDraw, ImageFont
 from io import BytesIO
 import json
+import random
 import config
+
+fun_messages = [
+    "<:Emoji_1More_Goldforged:1430608366031474710> 1 More! Keep rising!",
+    "<:Emoji_Sweat:1430608404816330842> You're leveling up like a legend!",
+    "Another step to greatness, keep pushing <:Emoji_LookinGood_Swanky:1430608386189168840>!",
+    "<:Emoji_Heart:1441146930221547600> Your grind is insane, don’t stop!",
+    "<:Emoji_Think_Patrick:1430608408188420116> Rising… just like your XP!",
+    "You’re unstoppable today <:Emoji_RIP_Interloper:1430608393458159706>!",
+    "Your journey keeps getting brighter! <:Emoji_Heart_SpongeBob:1430608380510212287>",
+    "<:Emoji_GG_Fenrir:1441146927227080774> A new level? Easy for you.",
+    "You’re built different, fr <:Emoji_LookinGood_Fait:1430608383232442428>",
+    "<:Emoji_Think_Vivi:1441146957534859376> That’s some REAL progress right there!",
+    "You keep climbing… impressive <:Emoji_Shrug_Street_Sovereign:1441146941172875385>.",
+    "<:Emoji_WP_Modular_Rift:1441146983992791051> Absolutely cooking the XP today!",
+    "<:Emoji_Shrug_Goldforged:1441146940174893329> Another one!",
+    "<:Emoji_ThumbsDown_Usurper:1430608419022176316> That XP didn’t stand a chance.",
+    "<:Emoji_LookinGood_SpongeBob:1441146935950970920> Your energy is unmatched, keep going!",
+    "Raising your level & the vibe <:Emoji_ThumbsUp_Puella_Papilio:1430608422709100695>.",
+    "<:Emoji_Laugh_Nix_Nervous:1441146934520713246> You're farming XP like a spammer!",
+    "<:Emoji_Wait_Goldforged:1441146976770068541> More XP? Easy work for you.",
+    "Grinding mode: ACTIVATED <:Emoji_Rage_Miracle_Magi__Starlit:1430608390572347614>.",
+    "<:Emoji_Wow_Metadev:1441146982679843048> The path to legend gets brighter!",
+    "<:Emoji_ThumbsUp_King:1441146971724320981> Your progress is too clean 🔥",
+    "You're glowing with XP energy! <:Emoji_Think_Santa:1441146954871607366>",
+    "<:Emoji_Wow_Imugi:1430608430212714618> A new level dawns for you…",
+    "Your next milestone is waiting <:Emoji_Wave_Royal_Warrior:1430608427243274290>.",
+    "<:Emoji_Think_First_Day:1441146948383019059> You just keep winning today!",
+    "You’re destined for something big <a:adaeatingramen:1430306964184760411>."
+]
 
 def truncate_username(txt, max_length=10):
     if len(txt) > max_length:
@@ -15,6 +45,7 @@ def truncate_username(txt, max_length=10):
     return txt
 
 async def embedLvlUp(self, channel, user, xp, level, life):
+
     # --- Image de fond ---
     if os.path.exists(self.bg_image):
         img = Image.open(self.bg_image).convert("RGBA")
@@ -118,9 +149,12 @@ async def embedLvlUp(self, channel, user, xp, level, life):
     img.save(buffer, format="PNG")
     buffer.seek(0)
 
+    random_message = random.choice(fun_messages)
+
     await channel.send(
-        content=f"<:Emoji_1More_Goldforged:1430608366031474710> {user.mention} 1 More! keep rising!",
-        file=discord.File(buffer, "xp_card.png"))
+        content=f"{user.mention} {random_message}",
+        file=discord.File(buffer, "xp_card.png")
+    )
 
 class XPSystem(commands.Cog):
     def __init__(self, bot):
