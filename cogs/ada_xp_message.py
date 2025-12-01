@@ -44,7 +44,7 @@ def truncate_username(txt, max_length=10):
         return txt[:max_length - 3] + "..."
     return txt
 
-async def embedLvlUp(self, channel, user, xp, level, life):
+async def embedLvlUp(self, channel, user, xp, level, life, cmd):
 
     # --- Image de fond ---
     if os.path.exists(self.bg_image):
@@ -151,10 +151,10 @@ async def embedLvlUp(self, channel, user, xp, level, life):
 
     random_message = random.choice(fun_messages)
 
-    await channel.send(
-        content=f"{user.mention} {random_message}",
-        file=discord.File(buffer, "xp_card.png")
-    )
+    if cmd :
+        await channel.send(content=f"{user.mention}", file=discord.File(buffer, "xp_card.png"))        
+    else:
+        await channel.send(content=f"{user.mention} {random_message}", file=discord.File(buffer, "xp_card.png"))
 
 class XPSystem(commands.Cog):
     def __init__(self, bot):
@@ -283,7 +283,8 @@ class XPSystem(commands.Cog):
                 user=message.author,
                 xp=f"{new_xp} / {self.XP_LEVELS.get(str(level), '???')}",
                 level=f"{display_level} / {self.MAX_LEVEL_PER_LIFE}",
-                life=f"{life} / {self.NUM_LIVES}"
+                life=f"{life} / {self.NUM_LIVES}",
+                cmd=False
             )
 
     # --- SLASH COMMAND: DISPLAY XP PROFILE ---
@@ -325,7 +326,8 @@ class XPSystem(commands.Cog):
             user=interaction.user,
             xp=xp_text,
             level=level_text,
-            life=life_text
+            life=life_text,
+            cmd=True
         )
 
 async def setup(bot):
