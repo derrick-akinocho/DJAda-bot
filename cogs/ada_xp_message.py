@@ -54,7 +54,7 @@ async def embedLvlUp(self, channel, user, xp, level, life, cmd):
 
     draw = ImageDraw.Draw(img)
     font_title = ImageFont.truetype(self.font_titles, 80)
-    font_text = ImageFont.truetype(self.font_number, 45)
+    font_text = ImageFont.truetype(self.font_number, 50)
 
     # -------------------------------------------------------------------
     #                         AVATAR CENTRÉ EN HAUT
@@ -128,19 +128,19 @@ async def embedLvlUp(self, channel, user, xp, level, life, cmd):
     base_y = text_y + 70
     spacing = 70
     x_title = 150   # Titres à gauche
-    x_value = 380   # Valeurs alignées à droite
+    x_value = 400   # Valeurs alignées à droite
 
     # XP
     draw_gold_text(draw, x_title, base_y, "XP", font_title)
-    draw_white_emboss(draw, x_value - 80, base_y + 15, f"{xp}", font_text)
+    draw_white_emboss(draw, x_value - 140, base_y, f"{xp}", font_text)
 
     # LEVEL
     draw_gold_text(draw, x_title, base_y + spacing, "Level", font_title)
-    draw_white_emboss(draw, x_value, base_y + spacing + 15, f"{level}", font_text)
+    draw_white_emboss(draw, x_value, base_y + spacing, f"{level}", font_text)
 
     # LIFE
     draw_gold_text(draw, x_title, base_y + spacing * 2, "Life", font_title)
-    draw_white_emboss(draw, x_value, base_y + spacing * 2 + 15, f"{life}", font_text)
+    draw_white_emboss(draw, x_value, base_y + spacing * 2, f"{life}", font_text)
 
     # -------------------------------------------------------------------
     #                          ENVOI DE L'IMAGE
@@ -185,7 +185,7 @@ class XPSystem(commands.Cog):
         self.bg_folder = "assets/img/rank_avatar"
         self.bg_image = os.path.join(self.bg_folder, "lvl1.png")
         self.font_titles = "assets/fonts/NightHuntDemo.ttf"
-        self.font_number = "assets/fonts/BreatheFire.otf"
+        self.font_number = "assets/fonts/Baloo-Regular.ttf"
 
         print("🔁 XPSystem loaded")
 
