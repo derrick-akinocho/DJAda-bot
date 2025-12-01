@@ -265,8 +265,8 @@ class XPSystem(commands.Cog):
                 "level": level,
                 "life": life,
                 "last_react": now,
-                "code_lvl": user.get("code_lvl"),
-                "code_multiplicateur": user.get("code_multiplicateur", 0)
+                "code_lvl": user_data.get("code_lvl"),
+                "code_multiplicateur": user_data.get("code_multiplicateur", 0)
             }}
         )
 
