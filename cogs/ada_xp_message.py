@@ -174,6 +174,7 @@ class XPSystem(commands.Cog):
 
         # XP Config
         self.XP_PER_MESSAGE = config.XP_PER_MESSAGE
+        self.XP_PER_REACT = config.XP_PER_REACT
         self.XP_COOLDOWN = config.XP_COOLDOWN
         self.MAX_LEVEL_PER_LIFE = config.MAX_LEVEL_PER_LIFE
         self.NUM_LIVES = config.NUM_LIVES
@@ -188,6 +189,102 @@ class XPSystem(commands.Cog):
         self.font_number = "assets/fonts/Baloo-Regular.ttf"
 
         print("🔁 XPSystem loaded")
+    
+    @commands.Cog.listener()
+    async def on_reaction_add(self, reaction, user):
+        if user.bot:
+            return
+
+        # Le message où on a réagi
+        message = reaction.message
+        user_id = str(user.id)
+        now = int(time.time())
+
+        # On évite de donner de l'XP si la personne réagit à son propre message
+        if message.author.id == user.id:
+            return
+
+        # Récupère l'utilisateur dans la DB
+        user_data = self.xp_col.find_one({"_id": user_id})
+
+        # Si pas de profil → on le crée avec XP + XP_REACT
+        if not user_data:
+            self.xp_col.insert_one({
+                "_id": user_id,
+                "xp": self.XP_PER_REACT,
+                "level": 1,
+                "life": 1,
+                "last_message": now,
+                "last_react": now,
+                "code_lvl": None,
+                "code_multiplicateur": 0
+            })
+            return
+
+        # --- Cooldown réactions (ex : 10 sec) ---
+        last_react = user_data.get("last_react", 0)
+        
+        if now - last_react < config.REACT_COOLDOWN:
+            return
+
+        # Multiplicateur
+        multiplicator_code = str(user_data.get("code_multiplicateur", 0))
+        multiplicator_value = self.MULTIPLICATORS.get(multiplicator_code, 1)
+
+        xp_gain = config.XP_PER_REACT * multiplicator_value
+        new_xp = user_data["xp"] + xp_gain
+        level = user_data["level"]
+        life = user_data["life"]
+
+        leveled_up = False
+        life_up = False
+
+        # --- Vérification level up ---
+        while new_xp >= self.XP_LEVELS.get(str(level), self.XP_LEVELS[str(self.MAX_LEVEL_PER_LIFE)]):
+            print(f"[LEVEL UP CHECK] XP={new_xp} >= Required={self.XP_LEVELS[str(level)]} AFTER REACT")
+            new_xp -= self.XP_LEVELS.get(str(level), self.XP_LEVELS[str(self.MAX_LEVEL_PER_LIFE)])
+            level += 1
+            leveled_up = True
+
+            if level > self.MAX_LEVEL_PER_LIFE:
+                level = 1
+                life += 1
+                life_up = True
+                
+                if life > self.NUM_LIVES:
+                    life = self.NUM_LIVES
+                    new_xp = self.XP_LEVELS[str(self.MAX_LEVEL_PER_LIFE)]
+                    print(f"❗ MAX LIFE REACHED — Locking XP at max")
+                    break
+
+        # --- MAJ DB ---
+        self.xp_col.update_one(
+            {"_id": user_id},
+            {"$set": {
+                "xp": new_xp,
+                "level": level,
+                "life": life,
+                "last_react": now,
+                "code_lvl": user.get("code_lvl"),
+                "code_multiplicateur": user.get("code_multiplicateur", 0)
+            }}
+        )
+
+        print(f"[UPDATE] {message.author} | XP={new_xp} | Level={level} | Life={life}")
+              
+        # Envoie la carte si level-up (comme pour on_message)
+        if leveled_up and (level in self.NOTIFY_LEVELS or life_up):
+            announce_channel = self.bot.get_channel(config.XP_CHANNEL_ID)
+
+            await embedLvlUp(
+                self=self,
+                channel=announce_channel,
+                user=user,
+                xp=f"{new_xp} / {self.XP_LEVELS.get(str(level), '???')}",
+                level=f"{level} / {self.MAX_LEVEL_PER_LIFE}",
+                life=f"{life} / {self.NUM_LIVES}",
+                cmd=False
+            )
 
     @commands.Cog.listener()
     async def on_message(self, message: discord.Message):
@@ -236,7 +333,7 @@ class XPSystem(commands.Cog):
         life_up = False
 
         while new_xp >= self.XP_LEVELS.get(str(level), self.XP_LEVELS[str(self.MAX_LEVEL_PER_LIFE)]):
-            print(f"[LEVEL UP CHECK] XP={new_xp} >= Required={self.XP_LEVELS[str(level)]}")
+            print(f"[LEVEL UP CHECK] XP={new_xp} >= Required={self.XP_LEVELS[str(level)]} AFTER MESSAGE")
             new_xp -= self.XP_LEVELS.get(str(level), self.XP_LEVELS[str(self.MAX_LEVEL_PER_LIFE)])
             level += 1
             leveled_up = True
@@ -269,9 +366,7 @@ class XPSystem(commands.Cog):
 
         display_level = user.get("code_lvl") or level
 
-        print(
-            f"[UPDATE] {message.author} | XP={new_xp} | Level={level} | Life={life}"
-        )
+        print(f"[UPDATE] {message.author} | XP={new_xp} | Level={level} | Life={life}")
 
         # Send embed only for key levels or life-up
         if leveled_up and (level in self.NOTIFY_LEVELS or life_up):
@@ -289,7 +384,7 @@ class XPSystem(commands.Cog):
 
     # --- SLASH COMMAND: DISPLAY XP PROFILE ---
     @app_commands.command(name="bl_xp_card", description="Displays your XP profile.")
-    async def bl_xp_profile(self, interaction: discord.Interaction):
+    async def bl_xp_card(self, interaction: discord.Interaction):
 
         await interaction.response.defer()
 
