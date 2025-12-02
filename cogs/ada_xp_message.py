@@ -59,30 +59,45 @@ def truncate_username(txt, max_length=10):
 
 async def embedLvlUp(self, channel, user, xp, level, life, cmd, code_lvl=None):
 
-    # --- Image de fond ---
-    if os.path.exists(self.bg_image):
-        img = Image.open(self.bg_image).convert("RGBA")
-    else:
-        img = Image.new("RGBA", (720, 900), (44, 47, 51))
-
-    draw = ImageDraw.Draw(img)
-    font_title = ImageFont.truetype(self.font_titles, 80)
-    font_text = ImageFont.truetype(self.font_number, 50)
-
     # -------------------------------------------------------------------
     #                 AFFICHAGE MULTIPLICATEUR
     # -------------------------------------------------------------------
     user_boost = self.boost_col.find_one({"_id": str(user.id)}) or {}
-    multiplicator_user = 0
+    print(f"[DEBUG] user_boost raw: {user_boost}, type: {type(user_boost)}")
 
-    if user_boost and user_boost.get("multiplicateur_expire", 0) > user_boost.get("multiplicateur_start", 0):
-        multiplicator_user = self.MULTIPLICATORS.get(user_boost.get("multiplicateur", 0))
+    multiplicator_user = 0
+    if user_boost:
+        start = user_boost.get("multiplicateur_start", 0)
+        expire = user_boost.get("multiplicateur_expire", 0)
+        boost_value = user_boost.get("multiplicateur", 0)
+        print(f"[DEBUG] user boost start: {start}, expire: {expire}, value: {boost_value}")
+        if expire > start:
+            multiplicator_user = self.MULTIPLICATORS.get(boost_value, 0)
+            print(f"[DEBUG] multiplicator_user resolved: {multiplicator_user}")
+        else:
+            print("[DEBUG] user boost expired or invalid")
 
     global_boost = self.global_boost_col.find_one({"_id": "global_boost"}) or {}
+    print(f"[DEBUG] global_boost raw: {global_boost}, type: {type(global_boost)}")
+
     multiplicator_global = 0
-    
-    if global_boost and global_boost.get("expire", 0) > global_boost.get("start", 0):
-        multiplicator_global = self.MULTIPLICATORS.get(global_boost.get("multiplicator", 0))
+    if global_boost:
+        start = global_boost.get("start", 0)
+        expire = global_boost.get("expire", 0)
+        boost_value = global_boost.get("multiplicator", None)
+        print(f"[DEBUG] global boost start: {start}, expire: {expire}, value: {boost_value}")
+        
+        if start is not None and expire is not None and expire > start:
+            if boost_value in self.MULTIPLICATORS:
+                multiplicator_global = self.MULTIPLICATORS[boost_value]
+            else:
+                print(f"[DEBUG] global boost value {boost_value} not in MULTIPLICATORS, defaulting to 0")
+                multiplicator_global = 0
+        else:
+            print("[DEBUG] global boost expired or invalid")
+
+    print(f"[DEBUG] Final multiplicators => user: {multiplicator_user}, global: {multiplicator_global}")
+
 
     # -------------------------------------------------------------------
     #                         AVATAR CENTRÉ EN HAUT
