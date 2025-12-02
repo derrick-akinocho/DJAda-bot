@@ -380,7 +380,7 @@ class XPSystem(commands.Cog):
                         user_obj = self.bot.get_user(int(user_id))
                         name = user_obj.display_name if user_obj else user_id
                         await log_channel.send(
-                            f"⚡ Temporary XP boost update for **{name}**!\n" +
+                            f"<:Emoji_ThumbsUp_Yasuke:1441146974983295006> Temporary XP boost update for **{name}**!\n" +
                             "\n".join(log_lines) +
                             f"\nCheck time: <t:{now}:F>"
                         )
