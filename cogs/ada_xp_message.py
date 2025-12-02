@@ -179,7 +179,7 @@ async def embedLvlUp(self, channel, user, xp, level, life, cmd, code_lvl=None):
     draw_gold_text(draw, x_title, base_y + spacing, "Level", font_title)
 
     if code_lvl is not None and code_lvl > 0:
-        draw_active_emboss(draw, x_value, base_y + spacing, f"{code_lvl}", font_text)
+        draw_active_emboss(draw, x_value, base_y + spacing, f"{code_lvl} / {self.NUM_LIVES}", font_text)
     else:
         draw_white_emboss(draw, x_value, base_y + spacing, f"{level}", font_text)
 
@@ -545,7 +545,7 @@ class XPSystem(commands.Cog):
                 level=f"{level} / {self.MAX_LEVEL_PER_LIFE}",
                 life=f"{life} / {self.NUM_LIVES}",
                 cmd=False,
-                code_lvl=f"{code_lvl} / {self.NUM_LIVES}"
+                code_lvl=code_lvl
             )
 
     @commands.Cog.listener()
@@ -652,7 +652,7 @@ class XPSystem(commands.Cog):
                 level=f"{display_level} / {self.MAX_LEVEL_PER_LIFE}",
                 life=f"{life} / {self.NUM_LIVES}",
                 cmd=False,
-                code_lvl=f"{code_lvl} / {self.NUM_LIVES}")
+                code_lvl=code_lvl)
 
     # --- SLASH COMMAND: DISPLAY XP PROFILE ---
     @app_commands.command(name="bl_xp_card", description="Displays your XP profile.")
@@ -692,7 +692,6 @@ class XPSystem(commands.Cog):
         xp_text = f"{xp} / {self.XP_LEVELS.get(str(level), '???')}"
         level_text = f"{display_level} / {self.MAX_LEVEL_PER_LIFE}"
         life_text = f"{life} / {self.NUM_LIVES}"
-        code_lvl = f"{code_lvl} / {self.NUM_LIVES}"
 
         await interaction.followup.send("Generating your XP card...", ephemeral=True)
         
