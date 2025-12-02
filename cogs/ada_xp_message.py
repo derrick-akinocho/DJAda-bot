@@ -152,8 +152,8 @@ async def embedLvlUp(self, channel, user, xp, level, life, cmd, code_lvl=None):
     
     def draw_active_emboss(draw, x, y, text, font):
         draw.text((x + 3, y + 3), text, font=font, fill=(46, 45, 45))
-        draw.text((x - 2, y - 2), text, font=font, fill=(226, 23, 23))
-        draw.text((x, y), text, font=font, fill=(226, 68, 68))
+        draw.text((x - 2, y - 2), text, font=font, fill=(77, 158, 68))
+        draw.text((x, y), text, font=font, fill=(74, 245, 86))
 
     # -------------------------------------------------------------------
     #                 ALIGNEMENT GAUCHE FIXE DES INFOS
@@ -164,7 +164,7 @@ async def embedLvlUp(self, channel, user, xp, level, life, cmd, code_lvl=None):
         draw_gold_text(draw, img.width - 180, avatar_y + total_size - 40, f"x{multiplicator_user}", font_text)
 
     if multiplicator_global > 1:
-        draw_gold_text(draw, img.width - 180, avatar_y + total_size - 40, f"x{multiplicator_global}", font_text)
+        draw_gold_text(draw, img.width - 200, avatar_y + total_size - 40, f"x{multiplicator_global}", font_text)
 
     base_y = text_y + 70
     spacing = 70
@@ -179,7 +179,7 @@ async def embedLvlUp(self, channel, user, xp, level, life, cmd, code_lvl=None):
     draw_gold_text(draw, x_title, base_y + spacing, "Level", font_title)
 
     if code_lvl is not None and code_lvl > 0:
-        draw_active_emboss(draw, x_value, base_y + spacing, f"{code_lvl} / {self.NUM_LIVES}", font_text)
+        draw_active_emboss(draw, x_value, base_y + spacing, f"{code_lvl} / {self.MAX_LEVEL_PER_LIFE}", font_text)
     else:
         draw_white_emboss(draw, x_value, base_y + spacing, f"{level}", font_text)
 
@@ -582,7 +582,7 @@ class XPSystem(commands.Cog):
         # Multiplicateur perso
         multiplicator_value = self.MULTIPLICATORS.get(multiplicator_code, 1)
 
-        global_boost = await self.global_boost_col.find_one({"_id": "global_boost"}) or {}
+        global_boost = self.global_boost_col.find_one({"_id": "global_boost"}) or {}
         global_multiplicator = 0
     
         if global_boost and global_boost.get("expire", 0) > global_boost.get("start", 0):
