@@ -171,39 +171,49 @@ async def embedLvlUp(self, channel, user, xp, level, life, cmd):
 async def add_temporary_boost(self, user_id: str, multiplicator: str = None, code_lvl: int = None, duration: int = None):
     """
     Ajoute un multiplicateur/code_lvl temporaire pour un utilisateur.
-    Crée le document dans xp_boosts si nécessaire.
+    Crée le document dans xp_boosts si nécessaire et enregistre start/expire pour chaque boost.
     """
     now = int(time.time())
+    duration = duration or config.DEFAULT_XP_BOOST_DURATION
 
     # Vérifie si un document existe déjà
-    boost_doc = self.boost_col.find_one({"_id": user_id})
-    if not boost_doc:
-        boost_doc = {"_id": user_id}
-    
+    boost_doc = self.boost_col.find_one({"_id": user_id}) or {"_id": user_id}
+
+    # --- Multiplicateur ---
     if multiplicator:
         boost_doc["multiplicateur"] = multiplicator
         if duration:
+            boost_doc["multiplicateur_start"] = now
             boost_doc["multiplicateur_expire"] = now + duration
+        else:
+            boost_doc["multiplicateur_start"] = None
+            boost_doc["multiplicateur_expire"] = None
 
-        # Met à jour aussi dans xp_col pour appliquer le boost immédiatement
+        # Mise à jour immédiate dans xp_col
         self.xp_col.update_one(
             {"_id": user_id},
             {"$set": {"code_multiplicateur": multiplicator}},
             upsert=True
         )
 
+    # --- Code level ---
     if code_lvl is not None:
         boost_doc["code_lvl"] = code_lvl
         if duration:
+            boost_doc["code_lvl_start"] = now
             boost_doc["code_lvl_expire"] = now + duration
+        else:
+            boost_doc["code_lvl_start"] = None
+            boost_doc["code_lvl_expire"] = None
 
+        # Mise à jour immédiate dans xp_col
         self.xp_col.update_one(
             {"_id": user_id},
             {"$set": {"code_lvl": code_lvl}},
             upsert=True
         )
 
-    # Insère ou remplace le document dans xp_boosts
+    # --- Enregistrement dans la collection xp_boosts ---
     self.boost_col.update_one(
         {"_id": user_id},
         {"$set": boost_doc},
@@ -314,11 +324,9 @@ class XPSystem(commands.Cog):
 
         while not self.bot.is_closed():
             now = int(time.time())
-            
+
             for boost in self.boost_col.find({}):
                 user_id = boost["_id"]
-                expire_multi = boost.get("multiplicateur_expire")
-                expire_lvl = boost.get("code_lvl_expire")
 
                 # Récup du user dans xp_col
                 user = self.xp_col.find_one({"_id": user_id})
@@ -331,34 +339,53 @@ class XPSystem(commands.Cog):
                 update_fields = {}
                 log_lines = []
 
-                # Vérifier multiplicateur
-                if boost.get("multiplicateur") and expire_multi and now >= expire_multi:
+                # --- Vérification multiplicateur ---
+                multiplicator = boost.get("multiplicateur")
+                expire_multi = boost.get("multiplicateur_expire")
+                start_multi = boost.get("multiplicateur_start")
+
+                if multiplicator and expire_multi and now >= expire_multi:
                     update_fields["code_multiplicateur"] = 0
+                    boost["multiplicateur"] = None
+                    boost["multiplicateur_expire"] = None
+                    boost["multiplicateur_start"] = None
                     update_needed = True
-                    log_lines.append(f"Multiplicator x{boost['multiplicateur']} expired")
+                    log_lines.append(f"Multiplicator x{multiplicator} expired (started <t:{start_multi}:F>)")
 
-                # Vérifier code_lvl
-                if boost.get("code_lvl") and expire_lvl and now >= expire_lvl:
+                # --- Vérification code_lvl ---
+                code_lvl = boost.get("code_lvl")
+                expire_lvl = boost.get("code_lvl_expire")
+                start_lvl = boost.get("code_lvl_start")
+
+                if code_lvl and expire_lvl and now >= expire_lvl:
                     update_fields["code_lvl"] = None
+                    boost["code_lvl"] = None
+                    boost["code_lvl_expire"] = None
+                    boost["code_lvl_start"] = None
                     update_needed = True
-                    log_lines.append(f"Cosmetic Level {boost['code_lvl']} expired")
+                    log_lines.append(f"Cosmetic Level {code_lvl} expired (started <t:{start_lvl}:F>)")
 
-                # Mettre à jour xp_messages si expiré
+                # --- Mettre à jour xp_col si nécessaire ---
                 if update_needed:
                     self.xp_col.update_one({"_id": user_id}, {"$set": update_fields})
-                    
-                    # Log on Discord
-                    if log_channel:
+
+                    # Log sur Discord
+                    if log_channel and log_lines:
                         user_obj = self.bot.get_user(int(user_id))
                         name = user_obj.display_name if user_obj else user_id
                         await log_channel.send(
-                            f"⚡ Temporary XP boost ended for **{name}**!\n" +
+                            f"⚡ Temporary XP boost update for **{name}**!\n" +
                             "\n".join(log_lines) +
-                            f"\nTime: <t:{now}:F>"
+                            f"\nCheck time: <t:{now}:F>"
                         )
+
+                # --- Supprimer le document seulement si aucun boost actif ---
+                if not boost.get("multiplicateur") and not boost.get("code_lvl"):
                     self.boost_col.delete_one({"_id": user_id})
+                    print(f"[BOOST REMOVED] All temporary boosts expired for user {user_id}")
 
             await asyncio.sleep(config.DURATION_LOOP_BOOST)
+
 
     @commands.Cog.listener()
     async def on_reaction_add(self, reaction, user):
