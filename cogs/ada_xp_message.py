@@ -164,7 +164,7 @@ async def embedLvlUp(self, channel, user, xp, level, life, cmd, code_lvl=None):
         draw_gold_text(draw, img.width - 180, avatar_y + total_size - 40, f"x{multiplicator_user}", font_text)
 
     if multiplicator_global > 1:
-        draw_gold_text(draw, img.width - 200, avatar_y + total_size - 40, f"x{multiplicator_global}", font_text)
+        draw_gold_text(draw, img.width - 140, avatar_y + total_size - 40, f"x{multiplicator_global}", font_text)
 
     base_y = text_y + 70
     spacing = 70
@@ -323,11 +323,12 @@ class XPSystem(commands.Cog):
 
     async def activate_global_boost(self, multiplicator: int, duration: int):
         now = time.time()
-
+        duration = duration or config.DEFAULT_XP_BOOST_DURATION
+        
         # Ajouter ou mettre à jour le document global dans DB
         self.global_boost_col.update_one(
             {"_id": "global_boost"},
-            {"$set": {"multiplicator": multiplicator, "start": now, "expire": self.global_multi_end}},
+            {"$set": {"multiplicator": multiplicator, "start": now, "expire": now + duration}},
             upsert=True
         )
 
