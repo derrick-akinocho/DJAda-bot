@@ -168,22 +168,6 @@ async def embedLvlUp(self, channel, user, xp, level, life, cmd):
     else:
         await channel.send(content=f"{user.mention} {random_message}", file=discord.File(buffer, "xp_card.png"))
 
-async def set_global_multiplicator(self, multiplicator: int, duration: int):
- 
-    self.global_multiplicator = multiplicator
-    self.global_multi_end = time.time() + duration
-
-    print(f"[GLOBAL BOOST] Boost x{multiplicator} pour {duration} secondes")
-
-    # Attendre la fin
-    await asyncio.sleep(duration)
-
-    # Réinitialisation automatique
-    self.global_multiplicator = 1
-    self.global_multi_end = 0
-
-    print("[GLOBAL BOOST END] Le boost XP global est terminé.")
-
 async def add_temporary_boost(self, user_id: str, multiplicator: str = None, code_lvl: int = None, duration: int = None):
     """
     Ajoute un multiplicateur/code_lvl temporaire pour un utilisateur.
@@ -231,7 +215,8 @@ async def add_temporary_boost(self, user_id: str, multiplicator: str = None, cod
 class XPSystem(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        self.bot.loop.create_task(self.check_boosts_loop())
+        self.bot.loop.create_task(self.check_global_boost_loop())
+        self.bot.loop.create_task(self.check_user_boosts_loop())
 
         # Load JSON
         json_path = os.path.join(os.path.dirname(__file__), "../res", "xp_lvl.json")
@@ -246,7 +231,8 @@ class XPSystem(commands.Cog):
         # MongoDB
         self.client = MongoClient(config.MONGO_URI)
         self.db = self.client[config.DATABASE_NAME]
-        self.boost_col = self.db[config.COLLECTION_XP_BOOTS_USER]
+        self.global_boost_col = self.db[config.COLLECTION_XP_GLOBAL_BOOST]
+        self.boost_col = self.db[config.COLLECTION_XP_BOOST_USER]
         self.xp_col = self.db[config.COLLECTION_XP_MESSAGES_STATUS]
 
         # XP Config
@@ -264,9 +250,109 @@ class XPSystem(commands.Cog):
         self.bg_image = os.path.join(self.bg_folder, "lvl1.png")
         self.font_titles = "assets/fonts/NightHuntDemo.ttf"
         self.font_number = "assets/fonts/Baloo-Regular.ttf"
-
         print("🔁 XPSystem loaded")
     
+    async def activate_global_boost(self, multiplicator: int, duration: int):
+        now = time.time()
+        self.global_multiplicator = multiplicator
+        self.global_multi_end = now + duration
+
+        # Ajouter ou mettre à jour le document global dans DB
+        self.global_boost_col.update_one(
+            {"_id": "global_boost"},
+            {"$set": {"multiplicator": multiplicator, "expire": self.global_multi_end}},
+            upsert=True
+        )
+        print(f"[GLOBAL BOOST] Boost x{multiplicator} activé pour {duration}s")
+    
+    # --- Loop for checking global boost ---
+    async def check_global_boost_loop(self):
+        await self.bot.wait_until_ready()
+        log_channel = self.bot.get_channel(config.ADA_XP_BOOST_LOG_CHANNEL_ID)
+
+        while not self.bot.is_closed():
+            doc = self.global_boost_col.find_one({"_id": "global_boost"})
+            if doc:
+                now = time.time()
+                multiplicator = doc["multiplicator"]
+                expire = doc["expire"]
+                duration = int(expire - (doc.get("start", now)))
+
+                if now >= expire:
+                    # Reset in-memory
+                    self.global_multiplicator = 1
+                    self.global_multi_end = 0
+
+                    # Log to Discord
+                    if log_channel:
+                        await log_channel.send(
+                            f"⚡ Global XP Boost **x{multiplicator}** has ended!\n"
+                            f"Duration: {duration} seconds\n"
+                            f"Start: <t:{int(doc.get('start', now))}:F>\n"
+                            f"End: <t:{int(now)}:F>")
+                    # Delete from DB
+                    self.global_boost_col.delete_one({"_id": "global_boost"})
+                    print(f"[GLOBAL BOOST END] Boost x{multiplicator} expired and removed from DB")
+
+                else:
+                    # Boost still active → update in-memory
+                    self.global_multiplicator = multiplicator
+                    self.global_multi_end = expire
+
+            await asyncio.sleep(config.DURATION_LOOP_BOOST)
+
+    async def check_boosts_loop(self):
+        await self.bot.wait_until_ready()
+        log_channel = self.bot.get_channel(config.ADA_XP_BOOST_LOG_CHANNEL_ID)
+
+        while not self.bot.is_closed():
+            now = int(time.time())
+            
+            for boost in self.boost_col.find({}):
+                user_id = boost["_id"]
+                expire_multi = boost.get("multiplicateur_expire")
+                expire_lvl = boost.get("code_lvl_expire")
+
+                # Récup du user dans xp_col
+                user = self.xp_col.find_one({"_id": user_id})
+                if not user:
+                    # Si user n'existe pas, on peut supprimer le boost
+                    self.boost_col.delete_one({"_id": user_id})
+                    continue
+
+                update_needed = False
+                update_fields = {}
+                log_lines = []
+
+                # Vérifier multiplicateur
+                if boost.get("multiplicateur") and expire_multi and now >= expire_multi:
+                    update_fields["code_multiplicateur"] = 0
+                    update_needed = True
+                    log_lines.append(f"Multiplicator x{boost['multiplicateur']} expired")
+
+                # Vérifier code_lvl
+                if boost.get("code_lvl") and expire_lvl and now >= expire_lvl:
+                    update_fields["code_lvl"] = None
+                    update_needed = True
+                    log_lines.append(f"Cosmetic Level {boost['code_lvl']} expired")
+
+                # Mettre à jour xp_messages si expiré
+                if update_needed:
+                    self.xp_col.update_one({"_id": user_id}, {"$set": update_fields})
+                    
+                    # Log on Discord
+                    if log_channel:
+                        user_obj = self.bot.get_user(int(user_id))
+                        name = user_obj.display_name if user_obj else user_id
+                        await log_channel.send(
+                            f"⚡ Temporary XP boost ended for **{name}**!\n" +
+                            "\n".join(log_lines) +
+                            f"\nTime: <t:{now}:F>"
+                        )
+                    self.boost_col.delete_one({"_id": user_id})
+
+            await asyncio.sleep(config.DURATION_LOOP_BOOST)
+
     @commands.Cog.listener()
     async def on_reaction_add(self, reaction, user):
         if user.bot:
@@ -584,66 +670,39 @@ class XPSystem(commands.Cog):
             ephemeral=True
         )
 
-    @app_commands.command(name="bl_global_boost", description="Activates a temporary global XP boost")
+    # --- Commande slash pour lancer le boost ---
+    @app_commands.command(name="bl_global_boost", description="Activate a temporary global XP boost")
     @has_admin_role()
-    @app_commands.describe(multiplicator="Value (ex: 1)", duration="Duration by secondes")
+    @app_commands.describe(multiplicator="Value (ex: 2)", duration="Duration in seconds")
     async def global_boost(self, interaction: discord.Interaction, multiplicator: int, duration: int):
-
-        await interaction.response.send_message(f"🚀 Boost global XP **x{multiplicator}** is activated for **{duration} sec**", ephemeral=True)
-        # Lancer la fonction
-        self.bot.loop.create_task(self.set_global_multiplicator(multiplicator, duration))
+        await interaction.response.send_message( f"🚀 Global Boost XP x{multiplicator} activate for {duration}s", ephemeral=True)
+        await self.activate_global_boost(multiplicator, duration)
 
     @global_boost.error
     async def global_boost_error(self, interaction: discord.Interaction, error):
         if isinstance(error, app_commands.CheckFailure):
-            await interaction.response.send_message("<:Emoji_Shrug_Street_Sovereign:1441146941172875385> You don’t have permission.", ephemeral=True)
+            if interaction.response.is_done():
+                await interaction.followup.send("<:Emoji_Think_Goldforged:1441146950232571935> You don’t have permission.", ephemeral=True)
+            else:
+                await interaction.response.send_message("<:Emoji_Think_Goldforged:1441146950232571935> You don’t have permission.", ephemeral=True)
         else:
-            await interaction.response.send_message(f"❌ An error occurred: {error}", ephemeral=True)
-    
+            if interaction.response.is_done():
+                await interaction.followup.send(f"❌ An error occurred: {error}", ephemeral=True)
+            else:
+                await interaction.response.send_message(f"❌ An error occurred: {error}", ephemeral=True)
+
     @add_xp.error
     async def add_xp_error(self, interaction: discord.Interaction, error):
         if isinstance(error, app_commands.CheckFailure):
-            await interaction.response.send_message("<:Emoji_Shrug_Street_Sovereign:1441146941172875385> You don’t have permission.", ephemeral=True)
+            if interaction.response.is_done():
+                await interaction.followup.send("<:Emoji_Think_Goldforged:1441146950232571935> You don’t have permission.", ephemeral=True)
+            else:
+                await interaction.response.send_message("<:Emoji_Think_Goldforged:1441146950232571935> You don’t have permission.", ephemeral=True)
         else:
-            await interaction.response.send_message(f"❌ An error occurred: {error}", ephemeral=True)
-
-    async def check_boosts_loop(self):
-        await self.bot.wait_until_ready()
-        while not self.bot.is_closed():
-            now = int(time.time())
-            
-            for boost in self.boost_col.find({}):
-                user_id = boost["_id"]
-                expire_multi = boost.get("multiplicateur_expire")
-                expire_lvl = boost.get("code_lvl_expire")
-
-                # Récup du user dans xp_col
-                user = self.xp_col.find_one({"_id": user_id})
-                if not user:
-                    # Si user n'existe pas, on peut supprimer le boost
-                    self.boost_col.delete_one({"_id": user_id})
-                    continue
-
-                update_needed = False
-                update_fields = {}
-
-                # Vérifier multiplicateur
-                if boost.get("multiplicateur") and expire_multi and now >= expire_multi:
-                    update_fields["code_multiplicateur"] = 0
-                    update_needed = True
-
-                # Vérifier code_lvl
-                if boost.get("code_lvl") and expire_lvl and now >= expire_lvl:
-                    update_fields["code_lvl"] = None
-                    update_needed = True
-
-                # Mettre à jour xp_messages si expiré
-                if update_needed:
-                    self.xp_col.update_one({"_id": user_id}, {"$set": update_fields})
-                    # Supprimer document de boost
-                    self.boost_col.delete_one({"_id": user_id})
-
-            await asyncio.sleep(30)
+            if interaction.response.is_done():
+                await interaction.followup.send(f"❌ An error occurred: {error}", ephemeral=True)
+            else:
+                await interaction.response.send_message(f"❌ An error occurred: {error}", ephemeral=True)
 
 async def setup(bot):
     await bot.add_cog(XPSystem(bot))
