@@ -59,6 +59,16 @@ def truncate_username(txt, max_length=10):
 
 async def embedLvlUp(self, channel, user, xp, level, life, cmd, code_lvl=None):
 
+    # --- Image de fond ---
+    if os.path.exists(self.bg_image):
+        img = Image.open(self.bg_image).convert("RGBA")
+    else:
+        img = Image.new("RGBA", (720, 900), (44, 47, 51))
+
+    draw = ImageDraw.Draw(img)
+    font_title = ImageFont.truetype(self.font_titles, 80)
+    font_text = ImageFont.truetype(self.font_number, 50)
+
     # -------------------------------------------------------------------
     #                 AFFICHAGE MULTIPLICATEUR
     # -------------------------------------------------------------------
