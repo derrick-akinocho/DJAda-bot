@@ -191,10 +191,10 @@ async def embedLvlUp(self, channel, user, xp, level, life, cmd, code_lvl=None):
 
     # Affiche multiplicateur si > 1
     if multiplicator_user > 1:
-        draw_gold_text(draw, img.width - 180, avatar_y + total_size - 40, f"x{multiplicator_user}", font_text)
+        draw_gold_text(draw, img.width - 200, avatar_y + total_size - 65, f"x{multiplicator_user}", font_text)
 
     if multiplicator_global > 1:
-        draw_yellow_emboss(draw, img.width - 140, avatar_y + total_size - 40, f"x{multiplicator_global}", font_text)
+        draw_yellow_emboss(draw, img.width - 200, avatar_y + total_size - 45, f"x{multiplicator_global}", font_text)
 
     base_y = text_y + 70
     spacing = 70
