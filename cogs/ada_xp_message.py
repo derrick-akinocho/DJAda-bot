@@ -425,5 +425,92 @@ class XPSystem(commands.Cog):
             cmd=True
         )
 
+    @app_commands.command(name="bl_edit_card", description="Give XP / multiplicator / cosmetic level to a user")
+    @app_commands.describe(
+        user="The user to modify",
+        xp="XP to add/subtract (optional)",
+        multiplicator="Set the multiplicator code (optional)",
+        code_lvl="Set a cosmetic level (optional)")
+    @app_commands.checks.has_permissions(administrator=True)
+    async def add_xp(self, interaction: discord.Interaction, user: discord.Member, xp: int = None, multiplicator: str = None, code_lvl: int = None):
+        await interaction.response.defer(ephemeral=True)
+
+        user_id = str(user.id)
+        user_data = self.xp_col.find_one({"_id": user_id})
+
+        if not user_data:
+            # Création si l'utilisateur n'existe pas
+            user_data = {
+                "_id": user_id,
+                "xp": 0,
+                "level": 1,
+                "life": 1,
+                "last_message": 0,
+                "last_react": 0,
+                "code_lvl": None,
+                "code_multiplicateur": 0
+            }
+            self.xp_col.insert_one(user_data)
+
+        # --- XP ---
+        if xp is not None:
+            new_xp = user_data["xp"] + xp
+            level = user_data["level"]
+            life = user_data["life"]
+            leveled_up = False
+            life_up = False
+
+            while new_xp >= self.XP_LEVELS.get(str(level), self.XP_LEVELS[str(self.MAX_LEVEL_PER_LIFE)]):
+                new_xp -= self.XP_LEVELS.get(str(level), self.XP_LEVELS[str(self.MAX_LEVEL_PER_LIFE)])
+                level += 1
+                leveled_up = True
+
+                if level > self.MAX_LEVEL_PER_LIFE:
+                    level = 1
+                    life += 1
+                    life_up = True
+                    if life > self.NUM_LIVES:
+                        life = self.NUM_LIVES
+                        new_xp = self.XP_LEVELS[str(self.MAX_LEVEL_PER_LIFE)]
+                        break
+
+            self.xp_col.update_one(
+                {"_id": user_id},
+                {"$set": {
+                    "xp": new_xp,
+                    "level": level,
+                    "life": life
+                }}
+            )
+        else:
+            new_xp = user_data["xp"]
+            level = user_data["level"]
+            life = user_data["life"]
+
+        # --- Multiplicateur ---
+        if multiplicator:
+            if multiplicator in self.MULTIPLICATORS:
+                self.xp_col.update_one(
+                    {"_id": user_id},
+                    {"$set": {"code_multiplicateur": multiplicator}}
+                )
+            else:
+                await interaction.followup.send(f"Multiplicator `{multiplicator}` not found.", ephemeral=True)
+                return
+
+        # --- Cosmetic Level ---
+        if code_lvl is not None:
+            self.xp_col.update_one(
+                {"_id": user_id},
+                {"$set": {"code_lvl": code_lvl}}
+            )
+
+        await interaction.followup.send(
+            f"✅ Updated {user.mention}: XP={new_xp}, Level={level}, Life={life}, "
+            f"Multiplicator={multiplicator or user_data.get('code_multiplicateur')}, "
+            f"CodeLvl={code_lvl or user_data.get('code_lvl')}",
+            ephemeral=True
+        )
+
 async def setup(bot):
     await bot.add_cog(XPSystem(bot))
