@@ -259,11 +259,12 @@ class XPSystem(commands.Cog):
         self.global_multi_end = now + duration
 
         # Ajouter ou mettre à jour le document global dans DB
-        self.global_boost_col.update_one(
+        await self.global_boost_col.update_one(
             {"_id": "global_boost"},
-            {"$set": {"multiplicator": multiplicator, "expire": self.global_multi_end}},
+            {"$set": {"multiplicator": multiplicator, "start": now, "expire": self.global_multi_end}},
             upsert=True
         )
+
         print(f"[GLOBAL BOOST] Boost x{multiplicator} activé pour {duration}s")
     
     # --- Loop for checking global boost ---
@@ -277,7 +278,11 @@ class XPSystem(commands.Cog):
                 now = time.time()
                 multiplicator = doc["multiplicator"]
                 expire = doc["expire"]
-                duration = int(expire - (doc.get("start", now)))
+                start = doc.get("start", expire - 1)
+
+                duration = int(expire - start)
+                if duration < 0:
+                    duration = 0  # Sécurité anti bug
 
                 if now >= expire:
                     # Reset in-memory
@@ -289,8 +294,9 @@ class XPSystem(commands.Cog):
                         await log_channel.send(
                             f"⚡ Global XP Boost **x{multiplicator}** has ended!\n"
                             f"Duration: {duration} seconds\n"
-                            f"Start: <t:{int(doc.get('start', now))}:F>\n"
-                            f"End: <t:{int(now)}:F>")
+                            f"Start: <t:{int(start)}:F>\n"
+                            f"End: <t:{int(expire)}:F>"
+                        )
                     # Delete from DB
                     self.global_boost_col.delete_one({"_id": "global_boost"})
                     print(f"[GLOBAL BOOST END] Boost x{multiplicator} expired and removed from DB")
@@ -609,7 +615,7 @@ class XPSystem(commands.Cog):
         multiplicator="Set the multiplicator code (optional)",
         code_lvl="Set a cosmetic level (optional)",
         duration="Duration of multiplicator/code_lvl in seconds (optional)")
-    async def add_xp(self, interaction: discord.Interaction, user: discord.Member, xp: int = None, multiplicator: str = None, code_lvl: int = None, duration: int = None):
+    async def bl_edit_card(self, interaction: discord.Interaction, user: discord.Member, xp: int = None, multiplicator: str = None, code_lvl: int = None, duration: int = None):
         await interaction.response.defer(ephemeral=True)
 
         user_id = str(user.id)
@@ -662,7 +668,7 @@ class XPSystem(commands.Cog):
 
         # --- Multiplicateur / CodeLvl temporaire ---
         if multiplicator or code_lvl is not None:
-            await self.add_temporary_boost(user_id, multiplicator=multiplicator, code_lvl=code_lvl, duration=duration)
+            await add_temporary_boost(user_id, multiplicator=multiplicator, code_lvl=code_lvl, duration=duration)
 
         await interaction.followup.send(
             f"✅ Updated {user.mention}: XP={new_xp}, Level={level}, Life={life}, "
@@ -692,8 +698,8 @@ class XPSystem(commands.Cog):
             else:
                 await interaction.response.send_message(f"❌ An error occurred: {error}", ephemeral=True)
 
-    @add_xp.error
-    async def add_xp_error(self, interaction: discord.Interaction, error):
+    @bl_edit_card.error
+    async def bl_edit_card_error(self, interaction: discord.Interaction, error):
         if isinstance(error, app_commands.CheckFailure):
             if interaction.response.is_done():
                 await interaction.followup.send("<:Emoji_Think_Goldforged:1441146950232571935> You don’t have permission.", ephemeral=True)
