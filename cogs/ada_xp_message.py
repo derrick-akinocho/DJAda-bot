@@ -82,7 +82,7 @@ async def embedLvlUp(self, channel, user, xp, level, life, cmd, code_lvl=None):
     multiplicator_global = 0
     
     if global_boost and global_boost.get("expire", 0) > global_boost.get("start", 0):
-        multiplicator_global = int(self.MULTIPLICATORS.get(global_boost.get("multiplicator", 0)))
+        multiplicator_global = self.MULTIPLICATORS.get(global_boost.get("multiplicator", 0))
 
     # -------------------------------------------------------------------
     #                         AVATAR CENTRÉ EN HAUT
@@ -326,7 +326,7 @@ class XPSystem(commands.Cog):
 
         return view
 
-    async def activate_global_boost(self, multiplicator: int, duration: int):
+    async def activate_global_boost(self, multiplicator: str, duration: int):
         now = time.time()
         duration = duration or config.DEFAULT_XP_BOOST_DURATION
         
