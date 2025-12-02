@@ -82,7 +82,7 @@ async def embedLvlUp(self, channel, user, xp, level, life, cmd, code_lvl=None):
     multiplicator_global = 0
     
     if global_boost and global_boost.get("expire", 0) > global_boost.get("start", 0):
-        multiplicator_global = self.MULTIPLICATORS.get(global_boost.get("multiplicator", 0))
+        multiplicator_global = int(self.MULTIPLICATORS.get(global_boost.get("multiplicator", 0)))
 
     # -------------------------------------------------------------------
     #                         AVATAR CENTRÉ EN HAUT
@@ -149,6 +149,11 @@ async def embedLvlUp(self, channel, user, xp, level, life, cmd, code_lvl=None):
         draw.text((x + 3, y + 3), text, font=font, fill=(46, 45, 45))
         draw.text((x - 2, y - 2), text, font=font, fill=(226, 226, 226))
         draw.text((x, y), text, font=font, fill=(255, 255, 255))
+
+    def draw_yellow_emboss(draw, x, y, text, font):
+        draw.text((x + 3, y + 3), text, font=font, fill=(46, 45, 45))
+        draw.text((x - 2, y - 2), text, font=font, fill=(224, 187, 0))
+        draw.text((x, y), text, font=font, fill=(255, 219, 46))
     
     def draw_active_emboss(draw, x, y, text, font):
         draw.text((x + 3, y + 3), text, font=font, fill=(46, 45, 45))
@@ -159,12 +164,12 @@ async def embedLvlUp(self, channel, user, xp, level, life, cmd, code_lvl=None):
     #                 ALIGNEMENT GAUCHE FIXE DES INFOS
     # -------------------------------------------------------------------
 
-     # Affiche multiplicateur si > 1
+    # Affiche multiplicateur si > 1
     if multiplicator_user > 1:
         draw_gold_text(draw, img.width - 180, avatar_y + total_size - 40, f"x{multiplicator_user}", font_text)
 
     if multiplicator_global > 1:
-        draw_gold_text(draw, img.width - 140, avatar_y + total_size - 40, f"x{multiplicator_global}", font_text)
+        draw_yellow_emboss(draw, img.width - 140, avatar_y + total_size - 40, f"x{multiplicator_global}", font_text)
 
     base_y = text_y + 70
     spacing = 70
