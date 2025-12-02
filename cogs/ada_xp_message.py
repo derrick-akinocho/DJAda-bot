@@ -57,7 +57,7 @@ def truncate_username(txt, max_length=10):
         return txt[:max_length - 3] + "..."
     return txt
 
-async def embedLvlUp(self, channel, user, xp, level, life, cmd):
+async def embedLvlUp(self, channel, user, xp, level, life, cmd, code_lvl=None):
 
     # --- Image de fond ---
     if os.path.exists(self.bg_image):
@@ -68,6 +68,28 @@ async def embedLvlUp(self, channel, user, xp, level, life, cmd):
     draw = ImageDraw.Draw(img)
     font_title = ImageFont.truetype(self.font_titles, 80)
     font_text = ImageFont.truetype(self.font_number, 50)
+
+    # -------------------------------------------------------------------
+    #                 AFFICHAGE MULTIPLICATEUR
+    # -------------------------------------------------------------------
+    user_boost = await self.boost_col.find_one({"_id": str(user.id)}) or {}
+    multiplicator_user = 0
+
+    if user_boost and user_boost.get("multiplicateur_expire", 0) > user_boost.get("multiplicateur_start", 0):
+        multiplicator_user = self.MULTIPLICATORS.get(user_boost.get("multiplicateur", 0))
+
+    global_boost = await self.global_boost_col.find_one({"_id": "global_boost"}) or {}
+    multiplicator_global = 0
+    
+    if global_boost and global_boost.get("expire", 0) > global_boost.get("start", 0):
+        multiplicator_global = self.MULTIPLICATORS.get(global_boost.get("multiplicator", 0))
+
+    # Prend le multiplicateur le plus élevé
+    multiplicator = max(multiplicator_user, multiplicator_global)
+
+    # Affiche multiplicateur si > 1
+    if multiplicator > 1:
+        draw_white_emboss(draw, img.width - 180, avatar_y + total_size - 40, f"x{multiplicator}", font_text)
 
     # -------------------------------------------------------------------
     #                         AVATAR CENTRÉ EN HAUT
@@ -234,9 +256,6 @@ class XPSystem(commands.Cog):
             self.XP_LEVELS = data["levels"]
             self.MULTIPLICATORS = data["multiplicators"]
 
-        self.global_multiplicator = 1    # Valeur appliquée à tout le monde
-        self.global_multi_end = 0        # Timestamp de fin
-
         # MongoDB
         self.client = MongoClient(config.MONGO_URI)
         self.db = self.client[config.DATABASE_NAME]
@@ -294,11 +313,9 @@ class XPSystem(commands.Cog):
 
     async def activate_global_boost(self, multiplicator: int, duration: int):
         now = time.time()
-        self.global_multiplicator = multiplicator
-        self.global_multi_end = now + duration
 
         # Ajouter ou mettre à jour le document global dans DB
-        await self.global_boost_col.update_one(
+        self.global_boost_col.update_one(
             {"_id": "global_boost"},
             {"$set": {"multiplicator": multiplicator, "start": now, "expire": self.global_multi_end}},
             upsert=True
@@ -324,10 +341,6 @@ class XPSystem(commands.Cog):
                     duration = 0  # Sécurité anti bug
 
                 if now >= expire:
-                    # Reset in-memory
-                    self.global_multiplicator = 1
-                    self.global_multi_end = 0
-
                     # Log to Discord
                     if log_channel:
                         await log_channel.send(
@@ -339,11 +352,6 @@ class XPSystem(commands.Cog):
                     # Delete from DB
                     self.global_boost_col.delete_one({"_id": "global_boost"})
                     print(f"[GLOBAL BOOST END] Boost x{multiplicator} expired and removed from DB")
-
-                else:
-                    # Boost still active → update in-memory
-                    self.global_multiplicator = multiplicator
-                    self.global_multi_end = expire
 
             await asyncio.sleep(config.DURATION_LOOP_BOOST)
 
@@ -466,14 +474,18 @@ class XPSystem(commands.Cog):
         # Multiplicateur perso
         multiplicator_value = self.MULTIPLICATORS.get(multiplicator_code, 1)
 
-        # Multiplicateur global actif ?
-        if time.time() < self.global_multi_end:
-            multiplicator_value *= self.global_multiplicator
+        global_boost = await self.global_boost_col.find_one({"_id": "global_boost"}) or {}
+        global_multiplicator = 0
+    
+        if global_boost and global_boost.get("expire", 0) > global_boost.get("start", 0):
+            global_multiplicator = self.MULTIPLICATORS.get(global_boost.get("multiplicator", 0))
+            multiplicator_value *= global_multiplicator
 
         xp_gain = config.XP_PER_REACT * multiplicator_value
         new_xp = user_data["xp"] + xp_gain
         level = user_data["level"]
         life = user_data["life"]
+        code_lvl = user_data["code_lvl"]
 
         leveled_up = False
         life_up = False
@@ -522,7 +534,8 @@ class XPSystem(commands.Cog):
                 xp=f"{new_xp} / {self.XP_LEVELS.get(str(level), '???')}",
                 level=f"{level} / {self.MAX_LEVEL_PER_LIFE}",
                 life=f"{life} / {self.NUM_LIVES}",
-                cmd=False
+                cmd=False,
+                code_lvl=code_lvl
             )
 
     @commands.Cog.listener()
@@ -559,9 +572,12 @@ class XPSystem(commands.Cog):
         # Multiplicateur perso
         multiplicator_value = self.MULTIPLICATORS.get(multiplicator_code, 1)
 
-        # Multiplicateur global actif ?
-        if time.time() < self.global_multi_end:
-            multiplicator_value *= self.global_multiplicator
+        global_boost = await self.global_boost_col.find_one({"_id": "global_boost"}) or {}
+        global_multiplicator = 0
+    
+        if global_boost and global_boost.get("expire", 0) > global_boost.get("start", 0):
+            global_multiplicator = self.MULTIPLICATORS.get(global_boost.get("multiplicator", 0))
+            multiplicator_value *= global_multiplicator
 
 
         print(
@@ -573,6 +589,7 @@ class XPSystem(commands.Cog):
         new_xp = user["xp"] + self.XP_PER_MESSAGE * multiplicator_value
         level = user["level"]
         life = user["life"]
+        code_lvl = user["code_lvl"]
 
         leveled_up = False
         life_up = False
@@ -624,7 +641,8 @@ class XPSystem(commands.Cog):
                 xp=f"{new_xp} / {self.XP_LEVELS.get(str(level), '???')}",
                 level=f"{display_level} / {self.MAX_LEVEL_PER_LIFE}",
                 life=f"{life} / {self.NUM_LIVES}",
-                cmd=False
+                cmd=False,
+                code_lvl=code_lvl
             )
 
     # --- SLASH COMMAND: DISPLAY XP PROFILE ---
@@ -656,6 +674,7 @@ class XPSystem(commands.Cog):
         xp = user_data["xp"]
         level = user_data["level"]
         life = user_data["life"]
+        code_lvl = user_data["code_lvl"]
 
         # Level override (cosmetic level skin)
         display_level = user_data.get("code_lvl") or level
@@ -675,7 +694,8 @@ class XPSystem(commands.Cog):
             xp=xp_text,
             level=level_text,
             life=life_text,
-            cmd=True)
+            cmd=True,
+            code_lvl=code_lvl)
 
     @app_commands.command(name="bl_edit_card", description="Give XP / multiplicator / cosmetic level to a user")
     @has_admin_role()
@@ -796,7 +816,7 @@ class XPSystem(commands.Cog):
             pages.append(embed)
 
         if not pages:
-            return await interaction.followup.send("No active boosts found.", ephemeral=True)
+            return await interaction.followup.send("<:Emoji_Shrug_High_Priestess:1430608398466027682> No active boosts found.", ephemeral=True)
 
         # Pagination simple
         current_page = 0
@@ -810,7 +830,7 @@ class XPSystem(commands.Cog):
 
         boosts = list(self.global_boost_col.find({}))
         if not boosts:
-            return await interaction.followup.send("No global boosts active.", ephemeral=True)
+            return await interaction.followup.send("<:Emoji_Shrug_High_Priestess:1430608398466027682> No global boosts active.", ephemeral=True)
 
         pages = []
         for boost in boosts:
