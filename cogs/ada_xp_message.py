@@ -84,14 +84,6 @@ async def embedLvlUp(self, channel, user, xp, level, life, cmd, code_lvl=None):
     if global_boost and global_boost.get("expire", 0) > global_boost.get("start", 0):
         multiplicator_global = self.MULTIPLICATORS.get(global_boost.get("multiplicator", 0))
 
-    # Affiche multiplicateur si > 1
-    if multiplicator_user > 1:
-        draw_white_emboss(draw, img.width - 180, avatar_y + total_size - 40, f"x{multiplicator_user}", font_text)
-
-    if multiplicator_global > 1:
-        draw_white_emboss(draw, img.width - 180, avatar_y + total_size - 40, f"x{multiplicator_global}", font_text)
-
-
     # -------------------------------------------------------------------
     #                         AVATAR CENTRÉ EN HAUT
     # -------------------------------------------------------------------
@@ -157,10 +149,23 @@ async def embedLvlUp(self, channel, user, xp, level, life, cmd, code_lvl=None):
         draw.text((x + 3, y + 3), text, font=font, fill=(46, 45, 45))
         draw.text((x - 2, y - 2), text, font=font, fill=(226, 226, 226))
         draw.text((x, y), text, font=font, fill=(255, 255, 255))
+    
+    def draw_active_emboss(draw, x, y, text, font):
+        draw.text((x + 3, y + 3), text, font=font, fill=(46, 45, 45))
+        draw.text((x - 2, y - 2), text, font=font, fill=(226, 23, 23))
+        draw.text((x, y), text, font=font, fill=(226, 68, 68))
 
     # -------------------------------------------------------------------
     #                 ALIGNEMENT GAUCHE FIXE DES INFOS
     # -------------------------------------------------------------------
+
+     # Affiche multiplicateur si > 1
+    if multiplicator_user > 1:
+        draw_gold_text(draw, img.width - 180, avatar_y + total_size - 40, f"x{multiplicator_user}", font_text)
+
+    if multiplicator_global > 1:
+        draw_gold_text(draw, img.width - 180, avatar_y + total_size - 40, f"x{multiplicator_global}", font_text)
+
     base_y = text_y + 70
     spacing = 70
     x_title = 150   # Titres à gauche
@@ -172,7 +177,11 @@ async def embedLvlUp(self, channel, user, xp, level, life, cmd, code_lvl=None):
 
     # LEVEL
     draw_gold_text(draw, x_title, base_y + spacing, "Level", font_title)
-    draw_white_emboss(draw, x_value, base_y + spacing, f"{level}", font_text)
+
+    if code_lvl is not None and code_lvl > 0:
+        draw_active_emboss(draw, x_value, base_y + spacing, f"{code_lvl}", font_text)
+    else:
+        draw_white_emboss(draw, x_value, base_y + spacing, f"{level}", font_text)
 
     # LIFE
     draw_gold_text(draw, x_title, base_y + spacing * 2, "Lifes", font_title)
@@ -536,7 +545,7 @@ class XPSystem(commands.Cog):
                 level=f"{level} / {self.MAX_LEVEL_PER_LIFE}",
                 life=f"{life} / {self.NUM_LIVES}",
                 cmd=False,
-                code_lvl=code_lvl
+                code_lvl=f"{code_lvl} / {self.NUM_LIVES}"
             )
 
     @commands.Cog.listener()
@@ -643,8 +652,7 @@ class XPSystem(commands.Cog):
                 level=f"{display_level} / {self.MAX_LEVEL_PER_LIFE}",
                 life=f"{life} / {self.NUM_LIVES}",
                 cmd=False,
-                code_lvl=code_lvl
-            )
+                code_lvl=f"{code_lvl} / {self.NUM_LIVES}")
 
     # --- SLASH COMMAND: DISPLAY XP PROFILE ---
     @app_commands.command(name="bl_xp_card", description="Displays your XP profile.")
@@ -684,6 +692,7 @@ class XPSystem(commands.Cog):
         xp_text = f"{xp} / {self.XP_LEVELS.get(str(level), '???')}"
         level_text = f"{display_level} / {self.MAX_LEVEL_PER_LIFE}"
         life_text = f"{life} / {self.NUM_LIVES}"
+        code_lvl = f"{code_lvl} / {self.NUM_LIVES}"
 
         await interaction.followup.send("Generating your XP card...", ephemeral=True)
         
