@@ -358,7 +358,7 @@ class XPSystem(commands.Cog):
         # Ajouter ou mettre à jour le document global dans DB
         self.global_boost_col.update_one(
             {"_id": "global_boost"},
-            {"$set": {"multiplicator": multiplicator, "start": now, "expire": now + duration}},
+            {"$set": {"multiplicator":  str(multiplicator), "start": now, "expire": now + duration}},
             upsert=True
         )
 
