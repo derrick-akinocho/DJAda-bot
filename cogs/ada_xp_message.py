@@ -352,6 +352,16 @@ class XPSystem(commands.Cog):
                     update_needed = True
                     log_lines.append(f"Multiplicator x{multiplicator} expired (started <t:{start_multi}:F>)")
 
+                    # Log sur Discord
+                    if log_channel and log_lines:
+                        user_obj = self.bot.get_user(int(user_id))
+                        name = user_obj.display_name if user_obj else user_id
+                        await log_channel.send(
+                            f"⚡ Temporary XP boost update for **{name}**!\n" +
+                            "\n".join(log_lines) +
+                            f"\nCheck time: <t:{now}:F>"
+                        )
+
                 # --- Vérification code_lvl ---
                 code_lvl = boost.get("code_lvl")
                 expire_lvl = boost.get("code_lvl_expire")
@@ -365,10 +375,6 @@ class XPSystem(commands.Cog):
                     update_needed = True
                     log_lines.append(f"Cosmetic Level {code_lvl} expired (started <t:{start_lvl}:F>)")
 
-                # --- Mettre à jour xp_col si nécessaire ---
-                if update_needed:
-                    self.xp_col.update_one({"_id": user_id}, {"$set": update_fields})
-
                     # Log sur Discord
                     if log_channel and log_lines:
                         user_obj = self.bot.get_user(int(user_id))
@@ -378,6 +384,10 @@ class XPSystem(commands.Cog):
                             "\n".join(log_lines) +
                             f"\nCheck time: <t:{now}:F>"
                         )
+
+                # --- Mettre à jour xp_col si nécessaire ---
+                if update_needed:
+                    self.xp_col.update_one({"_id": user_id}, {"$set": update_fields})
 
                 # --- Supprimer le document seulement si aucun boost actif ---
                 if not boost.get("multiplicateur") and not boost.get("code_lvl"):
