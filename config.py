@@ -18,6 +18,7 @@ COLLECTION_PENDIND_ROLE = "pending_roles"
 COLLECTION_YOUTUBE_POSTS = "youtube_posts"
 COLLECTION_TWITCH_STATUS = "twitch_status"
 COLLECTION_XP_MESSAGES_STATUS = "xp_messages"
+COLLECTION_XP_BOOTS_USER = "xp_boosts"
 
 # ---------------------------
 #       SERVER SETTINGS
