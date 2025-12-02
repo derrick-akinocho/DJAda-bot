@@ -72,24 +72,25 @@ async def embedLvlUp(self, channel, user, xp, level, life, cmd, code_lvl=None):
     # -------------------------------------------------------------------
     #                 AFFICHAGE MULTIPLICATEUR
     # -------------------------------------------------------------------
-    user_boost = await self.boost_col.find_one({"_id": str(user.id)}) or {}
+    user_boost = self.boost_col.find_one({"_id": str(user.id)}) or {}
     multiplicator_user = 0
 
     if user_boost and user_boost.get("multiplicateur_expire", 0) > user_boost.get("multiplicateur_start", 0):
         multiplicator_user = self.MULTIPLICATORS.get(user_boost.get("multiplicateur", 0))
 
-    global_boost = await self.global_boost_col.find_one({"_id": "global_boost"}) or {}
+    global_boost = self.global_boost_col.find_one({"_id": "global_boost"}) or {}
     multiplicator_global = 0
     
     if global_boost and global_boost.get("expire", 0) > global_boost.get("start", 0):
         multiplicator_global = self.MULTIPLICATORS.get(global_boost.get("multiplicator", 0))
 
-    # Prend le multiplicateur le plus élevé
-    multiplicator = max(multiplicator_user, multiplicator_global)
-
     # Affiche multiplicateur si > 1
-    if multiplicator > 1:
-        draw_white_emboss(draw, img.width - 180, avatar_y + total_size - 40, f"x{multiplicator}", font_text)
+    if multiplicator_user > 1:
+        draw_white_emboss(draw, img.width - 180, avatar_y + total_size - 40, f"x{multiplicator_user}", font_text)
+
+    if multiplicator_global > 1:
+        draw_white_emboss(draw, img.width - 180, avatar_y + total_size - 40, f"x{multiplicator_global}", font_text)
+
 
     # -------------------------------------------------------------------
     #                         AVATAR CENTRÉ EN HAUT
