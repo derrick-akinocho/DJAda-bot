@@ -215,8 +215,6 @@ async def add_temporary_boost(self, user_id: str, multiplicator: str = None, cod
 class XPSystem(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        self.bot.loop.create_task(self.check_global_boost_loop())
-        self.bot.loop.create_task(self.check_user_boosts_loop())
 
         # Load JSON
         json_path = os.path.join(os.path.dirname(__file__), "../res", "xp_lvl.json")
@@ -244,6 +242,9 @@ class XPSystem(commands.Cog):
 
         # Levels to notify
         self.NOTIFY_LEVELS = [1,5,10,15,20,25,30,35,40,45,50,55,60,65,70,75,80,85,90,95,96,97,98,99]
+
+        self.bot.loop.create_task(self.check_global_boost_loop())
+        self.bot.loop.create_task(self.check_boosts_loop())
 
         # Dossier images et police
         self.bg_folder = "assets/img/rank_avatar"
