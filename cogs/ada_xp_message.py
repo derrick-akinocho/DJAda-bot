@@ -4,6 +4,8 @@ import os
 from discord.ext import commands
 from discord import app_commands
 from pymongo import MongoClient
+from discord.ui import View, Button
+from discord import Embed
 from PIL import Image, ImageDraw, ImageFont
 from io import BytesIO
 import json
@@ -39,7 +41,6 @@ fun_messages = [
     "<:Emoji_Think_First_Day:1441146948383019059> You just keep winning today!",
     "You’re destined for something big <a:adaeatingramen:1430306964184760411>."
 ]
-
 
 # --------- Vérification rôle (serveur uniquement) ---------
 def has_admin_role():
@@ -263,6 +264,34 @@ class XPSystem(commands.Cog):
         self.font_number = "assets/fonts/Baloo-Regular.ttf"
         print("🔁 XPSystem loaded")
     
+    # --- FUNCTION: CREATE PAGINATION VIEW ---
+    def _create_pagination_view(self, pages, current_page):
+        view = View()
+        max_page = len(pages) - 1
+
+        async def go_prev(interaction2):
+            nonlocal current_page
+            if current_page > 0:
+                current_page -= 1
+                await interaction2.response.edit_message(embed=pages[current_page], view=self._create_pagination_view(pages, current_page))
+
+        async def go_next(interaction2):
+            nonlocal current_page
+            if current_page < max_page:
+                current_page += 1
+                await interaction2.response.edit_message(embed=pages[current_page], view=self._create_pagination_view(pages, current_page))
+
+        btn_prev = Button(label="◀", style=discord.ButtonStyle.gray)
+        btn_prev.callback = go_prev
+        btn_next = Button(label="▶", style=discord.ButtonStyle.gray)
+        btn_next.callback = go_next
+
+        if max_page > 0:
+            view.add_item(btn_prev)
+            view.add_item(btn_next)
+
+        return view
+
     async def activate_global_boost(self, multiplicator: int, duration: int):
         now = time.time()
         self.global_multiplicator = multiplicator
@@ -281,7 +310,7 @@ class XPSystem(commands.Cog):
     async def check_global_boost_loop(self):
         await self.bot.wait_until_ready()
         log_channel = self.bot.get_channel(config.ADA_XP_BOOST_LOG_CHANNEL_ID)
-
+        
         while not self.bot.is_closed():
             doc = self.global_boost_col.find_one({"_id": "global_boost"})
             if doc:
@@ -357,9 +386,9 @@ class XPSystem(commands.Cog):
                         user_obj = self.bot.get_user(int(user_id))
                         name = user_obj.display_name if user_obj else user_id
                         await log_channel.send(
-                            f"⚡ Temporary XP boost update for **{name}**!\n" +
+                            f"<:Emoji_BRB_SpongeBob:1430608368963420291> Temporary XP boost update for **{name}**!\n" +
                             "\n".join(log_lines) +
-                            f"\nCheck time: <t:{now}:F>"
+                            f"\nCheck time: <t:{expire_multi}:F>"
                         )
 
                 # --- Vérification code_lvl ---
@@ -380,10 +409,8 @@ class XPSystem(commands.Cog):
                         user_obj = self.bot.get_user(int(user_id))
                         name = user_obj.display_name if user_obj else user_id
                         await log_channel.send(
-                            f"<:Emoji_ThumbsUp_Yasuke:1441146974983295006> Temporary XP boost update for **{name}**!\n" +
-                            "\n".join(log_lines) +
-                            f"\nCheck time: <t:{now}:F>"
-                        )
+                            f"<a:adaeatingramen:1430306964184760411> Temporary XP boost update for **{name}**!\n" +
+                            "\n".join(log_lines) + f"\nCheck time: <t:{expire_lvl}:F>")
 
                 # --- Mettre à jour xp_col si nécessaire ---
                 if update_needed:
@@ -395,7 +422,6 @@ class XPSystem(commands.Cog):
                     print(f"[BOOST REMOVED] All temporary boosts expired for user {user_id}")
 
             await asyncio.sleep(config.DURATION_LOOP_BOOST)
-
 
     @commands.Cog.listener()
     async def on_reaction_add(self, reaction, user):
@@ -603,11 +629,19 @@ class XPSystem(commands.Cog):
 
     # --- SLASH COMMAND: DISPLAY XP PROFILE ---
     @app_commands.command(name="bl_xp_card", description="Displays your XP profile.")
-    async def bl_xp_card(self, interaction: discord.Interaction):
+    @app_commands.describe(user="Optional: view another user's XP profile (admin only)")
+    async def bl_xp_card(self, interaction: discord.Interaction, user: discord.Member = None):
 
         await interaction.response.defer()
 
-        user_id = str(interaction.user.id)
+        # Si aucun user spécifié, on prend celui qui exécute la commande
+        target_user = user or interaction.user
+        user_id = str(target_user.id)
+
+        # Si c'est un autre utilisateur et que le commandant n'est pas admin
+        if user and not interaction.user.guild_permissions.administrator:
+            return await interaction.followup.send(
+                "<a:adaeatingramen:1430306964184760411>", ephemeral=True)
 
         # Fetch from MongoDB
         user_data = self.xp_col.find_one({"_id": user_id})
@@ -641,8 +675,7 @@ class XPSystem(commands.Cog):
             xp=xp_text,
             level=level_text,
             life=life_text,
-            cmd=True
-        )
+            cmd=True)
 
     @app_commands.command(name="bl_edit_card", description="Give XP / multiplicator / cosmetic level to a user")
     @has_admin_role()
@@ -722,6 +755,74 @@ class XPSystem(commands.Cog):
         await interaction.response.send_message( f"🚀 Global Boost XP x{multiplicator} activate for {duration}s", ephemeral=True)
         await self.activate_global_boost(multiplicator, duration)
 
+    # --- COMMAND /bl_boost ---
+    @app_commands.command(name="bl_show_boost", description="Display temporary XP boosts for a user or all users")
+    @has_admin_role()
+    @app_commands.describe(user="Optional: specify a user")
+    async def bl_show_boost(self, interaction: discord.Interaction, user: discord.Member = None):
+        await interaction.response.defer(ephemeral=True)
+
+        boosts = list(self.boost_col.find({}))
+
+        if user:
+            user_id = str(user.id)
+            boost = next((b for b in boosts if b["_id"] == user_id), None)
+            if not boost:
+                return await interaction.followup.send(f"No active boost found for {user.mention}", ephemeral=True)
+
+            embed = Embed(title=f"Boosts for {user.display_name}", color=0xFFD700)
+            embed.add_field(name="Multiplicator", value=str(boost.get("multiplicateur", "None")), inline=True)
+            embed.add_field(name="Cosmetic Level", value=str(boost.get("code_lvl", "None")), inline=True)
+            if boost.get("multiplicateur_expire"):
+                embed.add_field(name="Multiplicator expires", value=f"<t:{boost['multiplicateur_expire']}:R>", inline=False)
+            if boost.get("code_lvl_expire"):
+                embed.add_field(name="CodeLvl expires", value=f"<t:{boost['code_lvl_expire']}:R>", inline=False)
+
+            await interaction.followup.send(embed=embed, ephemeral=True)
+            return
+
+        # Si aucun user spécifié → lister tous les boosts
+        pages = []
+        for boost in boosts:
+            user_obj = self.bot.get_user(int(boost["_id"]))
+            name = user_obj.display_name if user_obj else boost["_id"]
+            embed = Embed(title=f"Boosts for {name}", color=0xFFD700)
+            embed.add_field(name="Multiplicator", value=str(boost.get("multiplicateur", "None")), inline=True)
+            embed.add_field(name="Cosmetic Level", value=str(boost.get("code_lvl", "None")), inline=True)
+            if boost.get("multiplicateur_expire"):
+                embed.add_field(name="Multiplicator expires", value=f"<t:{boost['multiplicateur_expire']}:R>", inline=False)
+            if boost.get("code_lvl_expire"):
+                embed.add_field(name="CodeLvl expires", value=f"<t:{boost['code_lvl_expire']}:R>", inline=False)
+            pages.append(embed)
+
+        if not pages:
+            return await interaction.followup.send("No active boosts found.", ephemeral=True)
+
+        # Pagination simple
+        current_page = 0
+        msg = await interaction.followup.send(embed=pages[current_page], ephemeral=True, view=self._create_pagination_view(pages, current_page))
+
+    # --- COMMAND /bl_global_boosts ---
+    @app_commands.command(name="bl_show_global_boosts", description="Display all global XP boosts")
+    @has_admin_role()
+    async def bl_show_global_boosts(self, interaction: discord.Interaction):
+        await interaction.response.defer(ephemeral=True)
+
+        boosts = list(self.global_boost_col.find({}))
+        if not boosts:
+            return await interaction.followup.send("No global boosts active.", ephemeral=True)
+
+        pages = []
+        for boost in boosts:
+            embed = Embed(title="Global Boost", color=0x00FF00)
+            embed.add_field(name="Multiplicator", value=str(boost.get("multiplicator", "None")), inline=True)
+            embed.add_field(name="Start", value=f"<t:{int(boost.get('start',0))}:F>", inline=True)
+            embed.add_field(name="Expire", value=f"<t:{int(boost.get('expire',0))}:F>", inline=True)
+            pages.append(embed)
+
+        current_page = 0
+        await interaction.followup.send(embed=pages[current_page], ephemeral=True, view=self._create_pagination_view(pages, current_page))
+
     @global_boost.error
     async def global_boost_error(self, interaction: discord.Interaction, error):
         if isinstance(error, app_commands.CheckFailure):
@@ -737,6 +838,32 @@ class XPSystem(commands.Cog):
 
     @bl_edit_card.error
     async def bl_edit_card_error(self, interaction: discord.Interaction, error):
+        if isinstance(error, app_commands.CheckFailure):
+            if interaction.response.is_done():
+                await interaction.followup.send("<:Emoji_Think_Goldforged:1441146950232571935> You don’t have permission.", ephemeral=True)
+            else:
+                await interaction.response.send_message("<:Emoji_Think_Goldforged:1441146950232571935> You don’t have permission.", ephemeral=True)
+        else:
+            if interaction.response.is_done():
+                await interaction.followup.send(f"❌ An error occurred: {error}", ephemeral=True)
+            else:
+                await interaction.response.send_message(f"❌ An error occurred: {error}", ephemeral=True)
+    
+    @bl_show_boost.error
+    async def bl_show_boost_error(self, interaction: discord.Interaction, error):
+        if isinstance(error, app_commands.CheckFailure):
+            if interaction.response.is_done():
+                await interaction.followup.send("<:Emoji_Think_Goldforged:1441146950232571935> You don’t have permission.", ephemeral=True)
+            else:
+                await interaction.response.send_message("<:Emoji_Think_Goldforged:1441146950232571935> You don’t have permission.", ephemeral=True)
+        else:
+            if interaction.response.is_done():
+                await interaction.followup.send(f"❌ An error occurred: {error}", ephemeral=True)
+            else:
+                await interaction.response.send_message(f"❌ An error occurred: {error}", ephemeral=True)
+    
+    @bl_show_global_boosts.error
+    async def bl_show_global_boosts_error(self, interaction: discord.Interaction, error):
         if isinstance(error, app_commands.CheckFailure):
             if interaction.response.is_done():
                 await interaction.followup.send("<:Emoji_Think_Goldforged:1441146950232571935> You don’t have permission.", ephemeral=True)
