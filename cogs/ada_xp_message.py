@@ -668,7 +668,7 @@ class XPSystem(commands.Cog):
 
         # --- Multiplicateur / CodeLvl temporaire ---
         if multiplicator or code_lvl is not None:
-            await add_temporary_boost(user_id, multiplicator=multiplicator, code_lvl=code_lvl, duration=duration)
+            await add_temporary_boost(self, user_id, multiplicator=multiplicator, code_lvl=code_lvl, duration=duration)
 
         await interaction.followup.send(
             f"✅ Updated {user.mention}: XP={new_xp}, Level={level}, Life={life}, "
