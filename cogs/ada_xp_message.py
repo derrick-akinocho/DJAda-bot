@@ -182,8 +182,8 @@ async def embedLvlUp(self, channel, user, xp, level, life, cmd, code_lvl=None):
     
     def draw_active_emboss(draw, x, y, text, font):
         draw.text((x + 3, y + 3), text, font=font, fill=(46, 45, 45))
-        draw.text((x - 2, y - 2), text, font=font, fill=(77, 158, 68))
-        draw.text((x, y), text, font=font, fill=(74, 245, 86))
+        draw.text((x - 2, y - 2), text, font=font, fill=(224, 187, 0))
+        draw.text((x, y), text, font=font, fill=(255, 255, 255))
 
     # -------------------------------------------------------------------
     #                 ALIGNEMENT GAUCHE FIXE DES INFOS
@@ -191,7 +191,7 @@ async def embedLvlUp(self, channel, user, xp, level, life, cmd, code_lvl=None):
 
     # Affiche multiplicateur si > 1
     if multiplicator_user > 1:
-        draw_yellow_emboss(draw, img.width - 200, avatar_y + total_size - 65, f"x{multiplicator_user}", font_text)
+        draw_yellow_emboss(draw, img.width - 200, avatar_y + total_size - 95, f"x{multiplicator_user}", font_text)
 
     if multiplicator_global > 1:
         draw_yellow_emboss(draw, img.width - 200, avatar_y + total_size - 45, f"x{multiplicator_global}", font_text)
@@ -309,12 +309,15 @@ class XPSystem(commands.Cog):
         self.XP_COOLDOWN = config.XP_COOLDOWN
         self.MAX_LEVEL_PER_LIFE = config.MAX_LEVEL_PER_LIFE
         self.NUM_LIVES = config.NUM_LIVES
-
+  
         # Levels to notify
         self.NOTIFY_LEVELS = [1,5,10,15,20,25,30,35,40,45,50,55,60,65,70,75,80,85,90,95,96,97,98,99]
 
         self.bot.loop.create_task(self.check_global_boost_loop())
         self.bot.loop.create_task(self.check_boosts_loop())
+
+        # XP vocal
+        self.voice_sessions = {}  # {user_id: timestamp_join}
 
         # Dossier images et police
         self.bg_folder = "assets/img/rank_avatar"
@@ -471,6 +474,119 @@ class XPSystem(commands.Cog):
                     print(f"[BOOST REMOVED] All temporary boosts expired for user {user_id}")
 
             await asyncio.sleep(config.DURATION_LOOP_BOOST)
+
+    @commands.Cog.listener()
+    async def on_voice_state_update(self, member, before, after):
+
+        # Ignorer les bots
+        if member.bot:
+            return
+
+        user_id = str(member.id)
+        now = int(time.time())
+
+        # --- JOIN VOCAL ---
+        if before.channel is None and after.channel is not None:
+            self.voice_sessions[user_id] = now
+            print(f"[VOCAL JOIN] {member} joined {after.channel.name}")
+            return
+
+        # --- LEAVE VOCAL ---
+        if before.channel is not None and after.channel is None:
+            join_time = self.voice_sessions.get(user_id)
+
+            if not join_time:
+                return
+
+            duration = now - join_time
+            del self.voice_sessions[user_id]
+
+            # On évite les micros-join
+            if duration < config.VOCAL_COOLDOWN:
+                print(f"[VOCAL IGNORE] {member} stayed only {duration}s")
+                return
+
+            # Conversion en minutes
+            minutes = duration // 60
+            if minutes <= 0:
+                minutes = 1
+
+            # MULTIPLICATEURS
+            user_data = self.xp_col.find_one({"_id": user_id})
+            if not user_data:
+                return
+
+            multiplicator_value = self.MULTIPLICATORS.get(str(user_data.get("code_multiplicateur", 0)), 1)
+
+            # Global boost
+            global_boost = self.global_boost_col.find_one({"_id": "global_boost"}) or {}
+            if global_boost and global_boost.get("expire", 0) > global_boost.get("start", 0):
+                multiplicator_value *= self.MULTIPLICATORS.get(str(global_boost.get("multiplicator", 0)), 1)
+
+            # XP TOTAL
+            xp_gain = minutes * config.XP_PER_MINUTE_VOCAL * multiplicator_value
+            print(f"[VOCAL XP] {member} earned {xp_gain} XP ({minutes} min)")
+
+            # --- AJOUT XP ---
+            new_xp = user_data["xp"] + xp_gain
+            level = user_data["level"]
+            life = user_data["life"]
+            code_lvl = user_data["code_lvl"]
+            
+            leveled_up = False
+            life_up = False
+
+            # Level up automatique
+            while new_xp >= self.XP_LEVELS.get(str(level), self.XP_LEVELS[str(self.MAX_LEVEL_PER_LIFE)]):
+
+                new_xp -= self.XP_LEVELS.get(str(level), self.XP_LEVELS[str(self.MAX_LEVEL_PER_LIFE)])
+                level += 1
+                leveled_up = True
+
+                # Life system
+                if level > self.MAX_LEVEL_PER_LIFE:
+                    level = 1
+                    life += 1
+                    life_up = True
+
+                    if life > self.NUM_LIVES:
+                        life = self.NUM_LIVES
+                        new_xp = self.XP_LEVELS[str(self.MAX_LEVEL_PER_LIFE)]
+                        break
+
+            # DB UPDATE
+            self.xp_col.update_one(
+                {"_id": user_id},
+                {"$set": {
+                    "xp": new_xp,
+                    "level": level,
+                    "life": life,
+                    "last_message": user_data.get("last_message", 0),
+                    "code_lvl": code_lvl,
+                    "code_multiplicateur": user_data.get("code_multiplicateur", 0)
+                }}
+            )
+
+            # Embed lvl up (même système que messages)
+            if leveled_up and (level in self.NOTIFY_LEVELS or life_up):
+                ch = self.bot.get_channel(config.XP_CHANNEL_ID)
+                await embedLvlUp(
+                    self=self,
+                    channel=ch,
+                    user=member,
+                    xp=f"{new_xp} / {self.XP_LEVELS.get(str(level), '???')}",
+                    level=f"{level} / {self.MAX_LEVEL_PER_LIFE}",
+                    life=f"{life} / {self.NUM_LIVES}",
+                    cmd=False,
+                    code_lvl=code_lvl
+                )
+
+            return
+
+        # --- SWITCH CHANNEL ---
+        if before.channel != after.channel and after.channel is not None:
+            self.voice_sessions[user_id] = now
+            print(f"[VOCAL SWITCH] {member} switched → reset join time")
 
     @commands.Cog.listener()
     async def on_reaction_add(self, reaction, user):
