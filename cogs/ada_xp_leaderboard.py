@@ -74,7 +74,7 @@ class Leaderboard(commands.Cog):
 
     async def generate_leaderboard_image(self, data, page_number, total_pages, rank_start):
         width, height = 720, 900  # Taille fixe
-        margin_top, margin_left = 100, 20
+        margin_top, margin_left = 90, 20
         # URL de l'image de fond en ligne
         bg_image_url = "https://i.ibb.co/4nf4bnP8/lboard.png"
 
@@ -97,7 +97,7 @@ class Leaderboard(commands.Cog):
 
         # Fonts
         try:
-            font_title = ImageFont.truetype("assets/fonts/Baloo-Regular.ttf", 45)
+            font_title = ImageFont.truetype("assets/fonts/Baloo-Regular.ttf", 65)
             font = ImageFont.truetype("assets/fonts/Baloo-Regular.ttf", 30)
         except OSError:
             font_title = ImageFont.load_default()
@@ -108,6 +108,7 @@ class Leaderboard(commands.Cog):
         bbox = font_title.getbbox(title_text)
         w, h = bbox[2] - bbox[0], bbox[3] - bbox[1]
         draw.text(((width - w) // 2, 10), title_text, font=font_title, fill=(255, 255, 255))
+        draw.text(((width - w) // 4, 12), title_text, font=font_title, fill=(255, 13, 196))
 
         async with aiohttp.ClientSession() as session:
             for idx, (name, level, xp, life, avatar_url) in enumerate(data):
