@@ -2,7 +2,6 @@ import discord
 from discord.ext import commands
 from discord import app_commands
 from pymongo import MongoClient
-from discord.ui import View, Button
 from PIL import Image, ImageDraw, ImageFont
 import aiohttp
 import io
@@ -35,6 +34,7 @@ class Leaderboard(commands.Cog):
                 avatar_url = None
             data.append((name, level, xp, life, avatar_url))
 
+        # Trier par level puis XP
         data.sort(key=lambda x: (x[1], x[2]), reverse=True)
         data = data[:top]
 
@@ -54,10 +54,10 @@ class Leaderboard(commands.Cog):
             await interaction.followup.send(file=f)
 
     async def generate_leaderboard_image(self, data):
-        width, height = 600, 80 * len(data)
+        width, height = 720, 900  # Taille fixe
         # Charger un arrière-plan si disponible, sinon fond gris
         try:
-            background = Image.open("assets/background.png").convert("RGBA").resize((width, height))
+            background = Image.open("assets/img/leaderboard.png").convert("RGBA").resize((width, height))
         except:
             background = Image.new("RGBA", (width, height), (30, 30, 30, 255))
 
@@ -65,25 +65,54 @@ class Leaderboard(commands.Cog):
         
         # Charger une font avec fallback
         try:
-            font = ImageFont.truetype("assets/fonts/Baloo-Regular.ttf", 24)
+            font = ImageFont.truetype("assets/fonts/Baloo-Regular.ttf", 28)
         except OSError:
             font = ImageFont.load_default()
 
         async with aiohttp.ClientSession() as session:
-            for idx, (name, level, xp, life, avatar_url) in enumerate(data):
-                y = idx * 80
-                # Avatar
+            for idx, (name, level, xp, life, avatar_url) in enumerate(data[:10]):  # Limite à 10
+                y = idx * 80 + 20
+
+                # Avatar circulaire avec bordure blanche
                 if avatar_url:
                     try:
                         async with session.get(avatar_url) as resp:
                             avatar_bytes = await resp.read()
-                            avatar_img = Image.open(io.BytesIO(avatar_bytes)).resize((64, 64))
-                            background.paste(avatar_img, (10, y + 8), avatar_img.convert("RGBA"))
+                            avatar_img = Image.open(io.BytesIO(avatar_bytes)).resize((64, 64)).convert("RGBA")
+                            
+                            # Cercle mask
+                            mask = Image.new("L", (64, 64), 0)
+                            mask_draw = ImageDraw.Draw(mask)
+                            mask_draw.ellipse((0, 0, 64, 64), fill=255)
+                            circle_avatar = Image.new("RGBA", (64, 64))
+                            circle_avatar.paste(avatar_img, (0, 0), mask)
+
+                            # Bordure blanche
+                            border = Image.new("RGBA", (68, 68), (255, 255, 255, 0))
+                            border_draw = ImageDraw.Draw(border)
+                            border_draw.ellipse((0, 0, 67, 67), outline=(255, 255, 255, 255), width=4)
+                            border.paste(circle_avatar, (2, 2), circle_avatar)
+
+                            background.paste(border, (10, y), border)
                     except:
                         pass
-                # Texte
-                draw.text((90, y + 20), f"{idx+1}. {name}", fill=(255, 255, 255), font=font)
-                draw.text((300, y + 20), f"Level: {level} | XP: {xp} | Life: {life}", fill=(255, 255, 255), font=font)
+
+                # Texte avec contour noir fin
+                x_name, x_info = 90, 300
+                text_name = f"{idx+1}. {name}" if len(name) <= 10 else name[:10] + "…"  # Limite à 10 caractères
+                text_info = f"Level: {level} | XP: {xp} | Life: {life}"
+
+                # Fonction contour
+                def draw_text_with_outline(draw_obj, position, text, font, fill=(255,255,255), outline=(0,0,0)):
+                    x, y = position
+                    for dx in [-1,0,1]:
+                        for dy in [-1,0,1]:
+                            if dx != 0 or dy != 0:
+                                draw_obj.text((x+dx, y+dy), text, font=font, fill=outline)
+                    draw_obj.text((x, y), text, font=font, fill=fill)
+
+                draw_text_with_outline(draw, (x_name, y+20), text_name, font)
+                draw_text_with_outline(draw, (x_info, y+20), text_info, font)
 
         buffer = io.BytesIO()
         background.save(buffer, format="PNG")
