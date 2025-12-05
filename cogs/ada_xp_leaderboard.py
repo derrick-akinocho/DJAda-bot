@@ -44,17 +44,24 @@ class Leaderboard(commands.Cog):
         # Découper en pages de 10 utilisateurs
         page_size = 10
         files = []
-        for i in range(0, len(data), page_size):
-            page_data = data[i:i + page_size]
-            leaderboard_image = await self.generate_leaderboard_image(page_data)
-            files.append(discord.File(leaderboard_image, filename=f"leaderboard_{i//page_size + 1}.png"))
+        total_pages = (len(data) - 1) // page_size + 1
+        rank_start = 1
+        for page_num in range(total_pages):
+            start_idx = page_num * page_size
+            end_idx = start_idx + page_size
+            page_data = data[start_idx:end_idx]
+            leaderboard_image = await self.generate_leaderboard_image(page_data, page_num + 1, total_pages, rank_start)
+            rank_start += len(page_data)
+            files.append(discord.File(leaderboard_image, filename=f"leaderboard_{page_num + 1}.png"))
 
         # Envoyer toutes les images
         for f in files:
             await interaction.followup.send(file=f)
 
-    async def generate_leaderboard_image(self, data):
+    async def generate_leaderboard_image(self, data, page_number, total_pages, rank_start):
         width, height = 720, 900  # Taille fixe
+        margin_top, margin_left = 50, 20  # Marges
+
         # Charger un arrière-plan si disponible, sinon fond gris
         try:
             background = Image.open("assets/img/leaderboard.png").convert("RGBA").resize((width, height))
@@ -65,13 +72,19 @@ class Leaderboard(commands.Cog):
         
         # Charger une font avec fallback
         try:
+            font_title = ImageFont.truetype("assets/fonts/Baloo-Regular.ttf", 36)
             font = ImageFont.truetype("assets/fonts/Baloo-Regular.ttf", 28)
         except OSError:
-            font = ImageFont.load_default()
+            font_title = font = ImageFont.load_default()
+
+        # Titre en haut
+        title_text = f"Leaderboard {page_number}/{total_pages}"
+        w, h = draw.textsize(title_text, font=font_title)
+        draw.text(((width-w)//2, 10), title_text, font=font_title, fill=(255, 255, 255))
 
         async with aiohttp.ClientSession() as session:
-            for idx, (name, level, xp, life, avatar_url) in enumerate(data[:10]):  # Limite à 10
-                y = idx * 80 + 20
+            for idx, (name, level, xp, life, avatar_url) in enumerate(data):
+                y = margin_top + idx * 80
 
                 # Avatar circulaire avec bordure blanche
                 if avatar_url:
@@ -93,13 +106,13 @@ class Leaderboard(commands.Cog):
                             border_draw.ellipse((0, 0, 67, 67), outline=(255, 255, 255, 255), width=4)
                             border.paste(circle_avatar, (2, 2), circle_avatar)
 
-                            background.paste(border, (10, y), border)
+                            background.paste(border, (margin_left, y), border)
                     except:
                         pass
 
                 # Texte avec contour noir fin
-                x_name, x_info = 90, 300
-                text_name = f"{idx+1}. {name}" if len(name) <= 10 else name[:10] + "…"  # Limite à 10 caractères
+                x_name, x_info = margin_left + 80, 300
+                text_name = f"{rank_start + idx}. {name}" if len(name) <= 10 else f"{rank_start + idx}. {name[:10]}…"
                 text_info = f"Level: {level} | XP: {xp} | Life: {life}"
 
                 # Fonction contour
