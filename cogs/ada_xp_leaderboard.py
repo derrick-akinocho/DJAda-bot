@@ -74,7 +74,7 @@ class Leaderboard(commands.Cog):
 
     async def generate_leaderboard_image(self, data, page_number, total_pages, rank_start):
         width, height = 720, 900  # Taille fixe
-        margin_top, margin_left = 50, 20
+        margin_top, margin_left = 100, 20
         # URL de l'image de fond en ligne
         bg_image_url = "https://i.ibb.co/4nf4bnP8/lboard.png"
 
@@ -97,14 +97,14 @@ class Leaderboard(commands.Cog):
 
         # Fonts
         try:
-            font_title = ImageFont.truetype("assets/fonts/Baloo-Regular.ttf", 36)
+            font_title = ImageFont.truetype("assets/fonts/Baloo-Regular.ttf", 45)
             font = ImageFont.truetype("assets/fonts/Baloo-Regular.ttf", 30)
         except OSError:
             font_title = ImageFont.load_default()
             font = ImageFont.load_default()
 
         # Titre en haut
-        title_text = f"BleedingLegend 💖 XP Leaderboard {page_number}/{total_pages}"
+        title_text = f"BL <3 XP Leaderboard {page_number}/{total_pages}"
         bbox = font_title.getbbox(title_text)
         w, h = bbox[2] - bbox[0], bbox[3] - bbox[1]
         draw.text(((width - w) // 2, 10), title_text, font=font_title, fill=(255, 255, 255))
@@ -138,7 +138,7 @@ class Leaderboard(commands.Cog):
                 # Texte avec contour noir
                 x_name, x_info = margin_left + 80, margin_left + 300
                 display_name = f"{rank_start + idx}. {name}" if len(name) <= 10 else f"{rank_start + idx}. {name[:8]}_"
-                text_info = f"Lvl: {level} | XP: {xp} | ❤️‍🔥 : {life}"
+                text_info = f"Lvl: {level} | XP: {xp} | Life: {life}"
 
                 def draw_text_with_outline(draw_obj, position, text, font, fill=(255,255,255), outline=(0,0,0)):
                     x, y = position
