@@ -20,6 +20,7 @@ class Leaderboard(commands.Cog):
     async def bl_xp_leaderboard(self, interaction: discord.Interaction, top: int = 10):
         await interaction.response.defer()
 
+        guild = self.bot.get_guild(config.GUILD_ID)
         if top > 20:
             return await interaction.followup.send("<:Emoji_Think_Elvenhollow:1441146944142442567> 20 Brawlers max!")
 
@@ -29,13 +30,22 @@ class Leaderboard(commands.Cog):
             level = user_doc.get("level", 0)
             xp = user_doc.get("xp", 0)
             life = user_doc.get("life", 0)
+
+            # ID du serveur
+            member = guild.get_member(user_id)
+
+            if member:  
+                name = member.display_name
+            else:
+                user_obj = await self.bot.fetch_user(user_id)
+                name = user_obj.name
+
             try:
                 user_obj = await self.bot.fetch_user(user_id)
-                name = user_obj.display_name
                 avatar_url = str(user_obj.display_avatar.url)
             except:
-                name = f"Unknown ({user_id})"
                 avatar_url = None
+
             data.append((name, level, xp, life, avatar_url))
 
         # Trier par level puis XP
@@ -80,7 +90,7 @@ class Leaderboard(commands.Cog):
         # Fonts
         try:
             font_title = ImageFont.truetype("assets/fonts/Baloo-Regular.ttf", 36)
-            font = ImageFont.truetype("assets/fonts/Baloo-Regular.ttf", 28)
+            font = ImageFont.truetype("assets/fonts/Baloo-Regular.ttf", 30)
         except OSError:
             font_title = ImageFont.load_default()
             font = ImageFont.load_default()
