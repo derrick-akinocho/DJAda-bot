@@ -54,7 +54,7 @@ class Leaderboard(commands.Cog):
         width, height = 600, 80 * len(data)
         background = Image.new("RGBA", (width, height), (30, 30, 30, 255))
         draw = ImageDraw.Draw(background)
-        font = ImageFont.truetype("arial.ttf", 24)  # tu peux mettre ton font ici
+        font = ImageFont.truetype("assets/fonts/Baloo-Regular.ttf", 24)  # tu peux mettre ton font ici
 
         async with aiohttp.ClientSession() as session:
             for idx, (name, level, xp, life, avatar_url) in enumerate(data):
