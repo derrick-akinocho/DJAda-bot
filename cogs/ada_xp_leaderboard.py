@@ -83,7 +83,8 @@ class Leaderboard(commands.Cog):
             with Image.open(self.bg_image_path) as img:
                 background = img.convert("RGBA").resize((width, height))
         else:
-            background = Image.new("RGBA", (width, height), (30, 30, 30, 255))
+            with Image.open(self.bg_image_path) as img:
+                background = img.convert("RGBA").resize((width, height))
 
         draw = ImageDraw.Draw(background)
 
@@ -96,7 +97,7 @@ class Leaderboard(commands.Cog):
             font = ImageFont.load_default()
 
         # Titre en haut
-        title_text = f"BleedingLegend <:Emoji_LookinGood_Swanky:1430608386189168840> XP Leaderboard {page_number}/{total_pages}"
+        title_text = f"BleedingLegend 💖 XP Leaderboard {page_number}/{total_pages}"
         bbox = font_title.getbbox(title_text)
         w, h = bbox[2] - bbox[0], bbox[3] - bbox[1]
         draw.text(((width - w) // 2, 10), title_text, font=font_title, fill=(255, 255, 255))
@@ -130,7 +131,7 @@ class Leaderboard(commands.Cog):
                 # Texte avec contour noir
                 x_name, x_info = margin_left + 80, margin_left + 300
                 display_name = f"{rank_start + idx}. {name}" if len(name) <= 10 else f"{rank_start + idx}. {name[:8]}…"
-                text_info = f"Lvl: {level} | XP: {xp} | <:Emoji_Heart_Nix:1430608379457437819> : {life}"
+                text_info = f"Lvl: {level} | XP: {xp} | ❤️‍🔥 : {life}"
 
                 def draw_text_with_outline(draw_obj, position, text, font, fill=(255,255,255), outline=(0,0,0)):
                     x, y = position
