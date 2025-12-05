@@ -39,37 +39,52 @@ class Leaderboard(commands.Cog):
         data = data[:top]
 
         if not data:
-            return await interaction.followup.send("No players found.")
+            return await interaction.followup.send("<:Emoji_Think_Elvenhollow:1441146944142442567> No players found.")
 
-        # Générer image du leaderboard
-        leaderboard_image = await self.generate_leaderboard_image(data)
+        # Découper en pages de 10 utilisateurs
+        page_size = 10
+        files = []
+        for i in range(0, len(data), page_size):
+            page_data = data[i:i + page_size]
+            leaderboard_image = await self.generate_leaderboard_image(page_data)
+            files.append(discord.File(leaderboard_image, filename=f"leaderboard_{i//page_size + 1}.png"))
 
-        file = discord.File(leaderboard_image, filename="leaderboard.png")
-        embed = discord.Embed(title="🏆 XP Leaderboard", color=0xFFD700)
-        embed.set_image(url="attachment://leaderboard.png")
-
-        await interaction.followup.send(embed=embed, file=file)
+        # Envoyer toutes les images
+        for f in files:
+            await interaction.followup.send(file=f)
 
     async def generate_leaderboard_image(self, data):
         width, height = 600, 80 * len(data)
-        background = Image.new("RGBA", (width, height), (30, 30, 30, 255))
+        # Charger un arrière-plan si disponible, sinon fond gris
+        try:
+            background = Image.open("assets/background.png").convert("RGBA").resize((width, height))
+        except:
+            background = Image.new("RGBA", (width, height), (30, 30, 30, 255))
+
         draw = ImageDraw.Draw(background)
-        font = ImageFont.truetype("assets/fonts/Baloo-Regular.ttf", 24)  # tu peux mettre ton font ici
+        
+        # Charger une font avec fallback
+        try:
+            font = ImageFont.truetype("assets/fonts/Baloo-Regular.ttf", 24)
+        except OSError:
+            font = ImageFont.load_default()
 
         async with aiohttp.ClientSession() as session:
             for idx, (name, level, xp, life, avatar_url) in enumerate(data):
                 y = idx * 80
                 # Avatar
                 if avatar_url:
-                    async with session.get(avatar_url) as resp:
-                        avatar_bytes = await resp.read()
-                        avatar_img = Image.open(io.BytesIO(avatar_bytes)).resize((64, 64))
-                        background.paste(avatar_img, (10, y + 8))
+                    try:
+                        async with session.get(avatar_url) as resp:
+                            avatar_bytes = await resp.read()
+                            avatar_img = Image.open(io.BytesIO(avatar_bytes)).resize((64, 64))
+                            background.paste(avatar_img, (10, y + 8), avatar_img.convert("RGBA"))
+                    except:
+                        pass
                 # Texte
-                draw.text((90, y + 20), f"{idx+1}. {name}", fill=(255, 255, 255))
-                draw.text((300, y + 20), f"Level: {level} | XP: {xp} | Life: {life}", fill=(255, 255, 255))
+                draw.text((90, y + 20), f"{idx+1}. {name}", fill=(255, 255, 255), font=font)
+                draw.text((300, y + 20), f"Level: {level} | XP: {xp} | Life: {life}", fill=(255, 255, 255), font=font)
 
-        # Sauvegarder dans un buffer
         buffer = io.BytesIO()
         background.save(buffer, format="PNG")
         buffer.seek(0)
