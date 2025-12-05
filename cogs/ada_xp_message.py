@@ -631,7 +631,7 @@ class XPSystem(commands.Cog):
         # Multiplicateur perso
         multiplicator_value = self.MULTIPLICATORS.get(multiplicator_code, 1)
 
-        global_boost = await self.global_boost_col.find_one({"_id": "global_boost"}) or {}
+        global_boost = self.global_boost_col.find_one({"_id": "global_boost"}) or {}
         global_multiplicator = 0
     
         if global_boost and global_boost.get("expire", 0) > global_boost.get("start", 0):
