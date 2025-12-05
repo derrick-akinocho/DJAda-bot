@@ -28,7 +28,7 @@ class Leaderboard(commands.Cog):
             life = user_doc.get("life", 0)
             try:
                 user_obj = await self.bot.fetch_user(user_id)
-                name = user_obj.name
+                name = user_obj.display_name
                 avatar_url = str(user_obj.display_avatar.url)
             except:
                 name = f"Unknown ({user_id})"
