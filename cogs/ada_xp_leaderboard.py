@@ -76,7 +76,12 @@ class Leaderboard(commands.Cog):
         width, height = 720, 900  # Taille fixe
         margin_top, margin_left = 50, 20
 
-        background = Image.open("assets/img/leaderboard.png").convert("RGBA")
+        if os.path.exists(self.bg_image_path):
+            with Image.open(self.bg_image_path) as img:
+                background = Image.open(io.BytesIO("https://i.ibb.co/4nf4bnP8/lboard.png")).convert("RGBA").resize((width, height))
+        else:
+            with Image.open(self.bg_image_path) as img:
+                background = Image.new("RGBA", (width, height), (30, 30, 30, 255))
 
         draw = ImageDraw.Draw(background)
 
