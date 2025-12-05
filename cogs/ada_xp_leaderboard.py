@@ -107,8 +107,9 @@ class Leaderboard(commands.Cog):
         title_text = f"BL <3 XP Leaderboard {page_number}/{total_pages}"
         bbox = font_title.getbbox(title_text)
         w, h = bbox[2] - bbox[0], bbox[3] - bbox[1]
+
+        draw.text(((width - w) // -1, 8), title_text, font=font_title, fill=(54, 54, 54))
         draw.text(((width - w) // 2, 10), title_text, font=font_title, fill=(255, 255, 255))
-        draw.text(((width - w) // 4, 12), title_text, font=font_title, fill=(255, 13, 196))
 
         async with aiohttp.ClientSession() as session:
             for idx, (name, level, xp, life, avatar_url) in enumerate(data):
