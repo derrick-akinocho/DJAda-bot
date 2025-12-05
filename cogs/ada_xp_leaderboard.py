@@ -5,6 +5,7 @@ from pymongo import MongoClient
 from PIL import Image, ImageDraw, ImageFont
 import aiohttp
 import io
+import os
 import config
 
 class Leaderboard(commands.Cog):
@@ -18,6 +19,9 @@ class Leaderboard(commands.Cog):
     @app_commands.describe(top="Number of players to display (default 10)")
     async def bl_xp_leaderboard(self, interaction: discord.Interaction, top: int = 10):
         await interaction.response.defer()
+
+        if top > 20:
+            return await interaction.followup.send("<:Emoji_Think_Elvenhollow:1441146944142442567> 20 Brawlers max!")
 
         data = []
         for user_doc in self.xp_col.find({}):
@@ -62,10 +66,13 @@ class Leaderboard(commands.Cog):
         width, height = 720, 900  # Taille fixe
         margin_top, margin_left = 50, 20
 
-        # Arrière-plan
-        try:
-            background = Image.open("assets/img/leaderboard.png").convert("RGBA").resize((width, height))
-        except:
+        self.bg_folder = "assets/img/leaderboard"
+        self.bg_image_path = os.path.join(self.bg_folder, "background.png")
+
+        if os.path.exists(self.bg_image_path):
+            with Image.open(self.bg_image_path) as img:
+                background = img.convert("RGBA").resize((width, height))
+        else:
             background = Image.new("RGBA", (width, height), (30, 30, 30, 255))
 
         draw = ImageDraw.Draw(background)
