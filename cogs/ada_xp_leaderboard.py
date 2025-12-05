@@ -75,13 +75,23 @@ class Leaderboard(commands.Cog):
     async def generate_leaderboard_image(self, data, page_number, total_pages, rank_start):
         width, height = 720, 900  # Taille fixe
         margin_top, margin_left = 50, 20
+        # URL de l'image de fond en ligne
+        bg_image_url = "https://i.ibb.co/4nf4bnP8/lboard.png"
 
-        if os.path.exists(self.bg_image_path):
-            with Image.open(self.bg_image_path) as img:
-                background = Image.open(io.BytesIO("https://i.ibb.co/4nf4bnP8/lboard.png")).convert("RGBA").resize((width, height))
-        else:
-            with Image.open(self.bg_image_path) as img:
-                background = Image.new("RGBA", (width, height), (30, 30, 30, 255))
+        try:
+            # Essayer de charger l'image depuis l'URL
+            async with aiohttp.ClientSession() as session:
+                async with session.get(bg_image_url) as resp:
+                    if resp.status == 200:
+                        bg_bytes = await resp.read()
+                        background = Image.open(io.BytesIO(bg_bytes)).convert("RGBA").resize((width, height))
+                    else:
+                        # Si l'URL ne fonctionne pas, utiliser un fond par défaut
+                        background = Image.new("RGBA", (width, height), (30, 30, 30, 255))
+        except Exception as e:
+            print(f"Erreur lors du téléchargement de l'image : {e}")
+            # En cas d'erreur, utiliser un fond par défaut
+            background = Image.new("RGBA", (width, height), (30, 30, 30, 255))
 
         draw = ImageDraw.Draw(background)
 
