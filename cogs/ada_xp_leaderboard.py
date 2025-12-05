@@ -76,19 +76,7 @@ class Leaderboard(commands.Cog):
         width, height = 720, 900  # Taille fixe
         margin_top, margin_left = 50, 20
 
-        self.bg_folder = "assets/img/"
-        self.bg_image_path = os.path.join(self.bg_folder, "leaderboard.png")
-
-        print(f"Chemin du fichier : {self.bg_image_path}")
-        print(f"Existe ? {os.path.exists(self.bg_image_path)}")
-        print(f"Permissions : {os.access(self.bg_image_path, os.R_OK)}")
-
-        if os.path.exists(self.bg_image_path):
-            with Image.open(self.bg_image_path) as img:
-                background = img.convert("RGBA").resize((width, height))
-        else:
-            with Image.open(self.bg_image_path) as img:
-                background = img.convert("RGBA").resize((width, height))
+        background = Image.open("assets/img/leaderboard.png").convert("RGBA")
 
         draw = ImageDraw.Draw(background)
 
