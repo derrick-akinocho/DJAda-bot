@@ -97,7 +97,7 @@ class Leaderboard(commands.Cog):
 
         # Fonts
         try:
-            font_title = ImageFont.truetype("assets/fonts/Baloo-Regular.ttf", 65)
+            font_title = ImageFont.truetype("assets/fonts/Baloo-Regular.ttf", 58)
             font = ImageFont.truetype("assets/fonts/Baloo-Regular.ttf", 30)
         except OSError:
             font_title = ImageFont.load_default()
