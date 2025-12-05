@@ -76,8 +76,8 @@ class Leaderboard(commands.Cog):
         width, height = 720, 900  # Taille fixe
         margin_top, margin_left = 50, 20
 
-        self.bg_folder = "assets/img/leaderboard"
-        self.bg_image_path = os.path.join(self.bg_folder, "background.png")
+        self.bg_folder = "assets/img/"
+        self.bg_image_path = os.path.join(self.bg_folder, "leaderboard.png")
 
         if os.path.exists(self.bg_image_path):
             with Image.open(self.bg_image_path) as img:
@@ -96,7 +96,7 @@ class Leaderboard(commands.Cog):
             font = ImageFont.load_default()
 
         # Titre en haut
-        title_text = f"Leaderboard {page_number}/{total_pages}"
+        title_text = f"BleedingLegend <:Emoji_LookinGood_Swanky:1430608386189168840> XP Leaderboard {page_number}/{total_pages}"
         bbox = font_title.getbbox(title_text)
         w, h = bbox[2] - bbox[0], bbox[3] - bbox[1]
         draw.text(((width - w) // 2, 10), title_text, font=font_title, fill=(255, 255, 255))
@@ -129,8 +129,8 @@ class Leaderboard(commands.Cog):
 
                 # Texte avec contour noir
                 x_name, x_info = margin_left + 80, margin_left + 300
-                display_name = f"{rank_start + idx}. {name}" if len(name) <= 10 else f"{rank_start + idx}. {name[:10]}…"
-                text_info = f"Level: {level} | XP: {xp} | Life: {life}"
+                display_name = f"{rank_start + idx}. {name}" if len(name) <= 10 else f"{rank_start + idx}. {name[:8]}…"
+                text_info = f"Lvl: {level} | XP: {xp} | <:Emoji_Heart_Nix:1430608379457437819> : {life}"
 
                 def draw_text_with_outline(draw_obj, position, text, font, fill=(255,255,255), outline=(0,0,0)):
                     x, y = position
