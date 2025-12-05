@@ -79,6 +79,10 @@ class Leaderboard(commands.Cog):
         self.bg_folder = "assets/img/"
         self.bg_image_path = os.path.join(self.bg_folder, "leaderboard.png")
 
+        print(f"Chemin du fichier : {self.bg_image_path}")
+        print(f"Existe ? {os.path.exists(self.bg_image_path)}")
+        print(f"Permissions : {os.access(self.bg_image_path, os.R_OK)}")
+
         if os.path.exists(self.bg_image_path):
             with Image.open(self.bg_image_path) as img:
                 background = img.convert("RGBA").resize((width, height))
@@ -130,7 +134,7 @@ class Leaderboard(commands.Cog):
 
                 # Texte avec contour noir
                 x_name, x_info = margin_left + 80, margin_left + 300
-                display_name = f"{rank_start + idx}. {name}" if len(name) <= 10 else f"{rank_start + idx}. {name[:8]}…"
+                display_name = f"{rank_start + idx}. {name}" if len(name) <= 10 else f"{rank_start + idx}. {name[:8]}_"
                 text_info = f"Lvl: {level} | XP: {xp} | ❤️‍🔥 : {life}"
 
                 def draw_text_with_outline(draw_obj, position, text, font, fill=(255,255,255), outline=(0,0,0)):
