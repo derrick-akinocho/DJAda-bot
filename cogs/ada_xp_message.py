@@ -855,6 +855,7 @@ class XPSystem(commands.Cog):
 
     @app_commands.command(name="bl_edit_card", description="Give XP / multiplicator / cosmetic level to a user")
     @has_admin_role()
+    @app_commands.checks.has_permissions(administrator=True)
     @app_commands.describe(
         user="The user to modify",
         xp="XP to add/subtract (optional)",
@@ -926,6 +927,7 @@ class XPSystem(commands.Cog):
     # --- Commande slash pour lancer le boost ---
     @app_commands.command(name="bl_global_boost", description="Activate a temporary global XP boost")
     @has_admin_role()
+    @app_commands.checks.has_permissions(administrator=True)
     @app_commands.describe(multiplicator="Value (ex: 2)", duration="Duration in seconds")
     async def global_boost(self, interaction: discord.Interaction, multiplicator: int, duration: int):
         await interaction.response.send_message( f"🚀 Global Boost XP x{multiplicator} activate for {duration}s", ephemeral=True)
@@ -934,6 +936,7 @@ class XPSystem(commands.Cog):
     # --- COMMAND /bl_boost ---
     @app_commands.command(name="bl_show_boost", description="Display temporary XP boosts for a user or all users")
     @has_admin_role()
+    @app_commands.checks.has_permissions(administrator=True)
     @app_commands.describe(user="Optional: specify a user")
     async def bl_show_boost(self, interaction: discord.Interaction, user: discord.Member = None):
         await interaction.response.defer(ephemeral=True)
@@ -981,6 +984,7 @@ class XPSystem(commands.Cog):
     # --- COMMAND /bl_global_boosts ---
     @app_commands.command(name="bl_show_global_boosts", description="Display all global XP boosts")
     @has_admin_role()
+    @app_commands.checks.has_permissions(administrator=True)
     async def bl_show_global_boosts(self, interaction: discord.Interaction):
         await interaction.response.defer(ephemeral=True)
 
