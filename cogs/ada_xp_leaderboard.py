@@ -108,8 +108,14 @@ class Leaderboard(commands.Cog):
         bbox = font_title.getbbox(title_text)
         w, h = bbox[2] - bbox[0], bbox[3] - bbox[1]
 
-        draw.text(((width - w) // 3, 11), title_text, font=font_title, fill=(54, 54, 54))
-        draw.text(((width - w) // 2, 10), title_text, font=font_title, fill=(255, 255, 255))
+        title_x = (width - w) // 3
+        title_y = 11
+        
+        draw_text_with_outline(draw, (title_x, title_y), title_text,
+                               font_title, fill=(255, 255, 255), # couleur du texte
+                               outline=(54, 54, 54), # couleur de la bordure
+                               stroke_width=3 # épaisseur
+                               )
 
         async with aiohttp.ClientSession() as session:
             for idx, (name, level, xp, life, avatar_url) in enumerate(data):
