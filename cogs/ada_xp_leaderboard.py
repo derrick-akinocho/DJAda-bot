@@ -15,13 +15,13 @@ class Leaderboard(commands.Cog):
         self.db = self.client[config.DATABASE_NAME]
         self.xp_col = self.db[config.COLLECTION_XP_MESSAGES_STATUS]
 
-    def draw_text_with_outline(draw_obj, position, text, font, fill=(255, 255, 255), outline=(0, 0, 0), stroke_width=2):
+    def draw_text_with_outline(draw_obj, position, text, font, fill=(255,255,255), outline=(0,0,0)):
         x, y = position
-        for dx in range(-stroke_width, stroke_width + 1):
-            for dy in range(-stroke_width, stroke_width + 1):
+        for dx in [-1,0,1]:
+            for dy in [-1,0,1]:
                 if dx != 0 or dy != 0:
-                    draw_obj.text((x + dx, y + dy), text, font=font, fill=outline)
-        draw_obj.text((x, y), text, font=font, fill=fill)
+                    draw_obj.text((x+dx, y+dy), text, font=font, fill=outline)
+                    draw_obj.text((x, y), text, font=font, fill=fill)
 
     @app_commands.command(name="bl_xp_leaderboard", description="Display the XP leaderboard")
     @app_commands.describe(top="Number of players to display (default 10)")
@@ -118,12 +118,8 @@ class Leaderboard(commands.Cog):
 
         title_x = (width - w) // 3
         title_y = 11
-        
-        draw_text_with_outline(draw, (title_x, title_y), title_text,
-                               font_title, fill=(255, 255, 255), # couleur du texte
-                               outline=(54, 54, 54), # couleur de la bordure
-                               stroke_width=3 # épaisseur
-                               )
+
+        self.draw_text_with_outline(draw, (title_x, title_y), title_text, font_title, fill=(255, 255, 255), outline=(54, 54, 54), stroke_width=3)
 
         async with aiohttp.ClientSession() as session:
             for idx, (name, level, xp, life, avatar_url) in enumerate(data):
@@ -156,16 +152,8 @@ class Leaderboard(commands.Cog):
                 display_name = f"{rank_start + idx}. {name}" if len(name) <= 10 else f"{rank_start + idx}. {name[:8]}_"
                 text_info = f"Lvl: {level} | XP: {xp} | Life: {life}"
 
-                def draw_text_with_outline(draw_obj, position, text, font, fill=(255,255,255), outline=(0,0,0)):
-                    x, y = position
-                    for dx in [-1,0,1]:
-                        for dy in [-1,0,1]:
-                            if dx != 0 or dy != 0:
-                                draw_obj.text((x+dx, y+dy), text, font=font, fill=outline)
-                    draw_obj.text((x, y), text, font=font, fill=fill)
-
-                draw_text_with_outline(draw, (x_name, y + 20), display_name, font)
-                draw_text_with_outline(draw, (x_info, y + 20), text_info, font)
+                self.draw_text_with_outline(draw, (x_name, y + 20), display_name, font)
+                self.draw_text_with_outline(draw, (x_info, y + 20), text_info, font)
 
         buffer = io.BytesIO()
         background.save(buffer, format="PNG")
