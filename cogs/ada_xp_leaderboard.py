@@ -15,6 +15,14 @@ class Leaderboard(commands.Cog):
         self.db = self.client[config.DATABASE_NAME]
         self.xp_col = self.db[config.COLLECTION_XP_MESSAGES_STATUS]
 
+    def draw_text_with_outline(draw_obj, position, text, font, fill=(255, 255, 255), outline=(0, 0, 0), stroke_width=2):
+        x, y = position
+        for dx in range(-stroke_width, stroke_width + 1):
+            for dy in range(-stroke_width, stroke_width + 1):
+                if dx != 0 or dy != 0:
+                    draw_obj.text((x + dx, y + dy), text, font=font, fill=outline)
+        draw_obj.text((x, y), text, font=font, fill=fill)
+
     @app_commands.command(name="bl_xp_leaderboard", description="Display the XP leaderboard")
     @app_commands.describe(top="Number of players to display (default 10)")
     async def bl_xp_leaderboard(self, interaction: discord.Interaction, top: int = 10):
