@@ -15,7 +15,7 @@ class Leaderboard(commands.Cog):
         self.db = self.client[config.DATABASE_NAME]
         self.xp_col = self.db[config.COLLECTION_XP_MESSAGES_STATUS]
 
-    def draw_text_with_outline(draw_obj, position, text, font, fill=(255,255,255), outline=(0,0,0)):
+    def draw_text_with_outline(self, draw_obj, position, text, font, fill=(255,255,255), outline=(0,0,0)):
         x, y = position
         for dx in [-1,0,1]:
             for dy in [-1,0,1]:
