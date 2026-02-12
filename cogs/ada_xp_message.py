@@ -285,6 +285,22 @@ async def add_temporary_boost(self, user_id: str, multiplicator: str = None, cod
 
     print(f"[BOOST ADDED] User={user_id}, Multiplicator={multiplicator}, CodeLvl={code_lvl}, Duration={duration}")
 
+async def log_users_command(self, user: discord.User, cmd: str, output: str = "No output"):
+        """
+        Log l'exécution d'une commande bash dans le salon prévu.
+        """
+        guild = user.guild
+        
+        if guild is None:
+            return  # si pas dans un guild, on ne log pas
+        
+        log_channel = guild.get_channel(config.USERS_LOGS_CHANNEL_ID)
+        if log_channel:
+            # Tronque si trop long pour Discord
+            if len(output) > 1900:
+                output = output[:1900] + "\n...[output truncated]"
+            await log_channel.send(f"**{user.mention}** run this cmd : `{cmd}`\nResults :\n```{output}```")
+      
 class XPSystem(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
@@ -326,17 +342,7 @@ class XPSystem(commands.Cog):
         self.font_number = "assets/fonts/Baloo-Regular.ttf"
         print("🔁 XPSystem loaded")
     
-    async def log_users_command(interaction: discord.Interaction, user: discord.User, cmd: str, output: str = "No output"):
-        """
-        Log l'exécution d'une commande bash dans le salon prévu.
-        """
-        log_channel = interaction.guild.get_channel(config.USERS_LOGS_CHANNEL_ID)
-        if log_channel:
-            # Tronque si trop long pour Discord
-            if len(output) > 1900:
-                output = output[:1900] + "\n...[output truncated]"
-            await log_channel.send(f"**{user.mention}** run this cmd : `{cmd}`\nResults :\n```{output}```")
-      
+    
     # --- FUNCTION: CREATE PAGINATION VIEW ---
     def _create_pagination_view(self, pages, current_page):
         view = View()
@@ -864,12 +870,11 @@ class XPSystem(commands.Cog):
             cmd=True,
             code_lvl=code_lvl)
         
-        await self.log_users_command(
-            interaction=interaction,
+        await log_users_command(
+            self=self,
             user=interaction.user,
-            cmd_name="bl_xp_card",
-            output=f""
-)
+            cmd="bl_xp_card",
+            outpu=f"")
 
     @app_commands.command(name="bl_edit_card", description="Give XP / multiplicator / cosmetic level to a user")
     @has_admin_role()
