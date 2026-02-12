@@ -874,7 +874,7 @@ class XPSystem(commands.Cog):
             self=self,
             user=interaction.user,
             cmd="bl_xp_card",
-            output=f"")
+            output="")
 
     @app_commands.command(name="bl_edit_card", description="Give XP / multiplicator / cosmetic level to a user")
     @has_admin_role()
@@ -940,11 +940,17 @@ class XPSystem(commands.Cog):
         if multiplicator or code_lvl is not None:
             await add_temporary_boost(self, user_id, multiplicator=multiplicator, code_lvl=code_lvl, duration=duration)
 
-        await interaction.followup.send(
-            f"✅ Updated {user.mention}: XP={new_xp}, Level={level}, Life={life}, "
-            f"Multiplicator={multiplicator or user_data.get('code_multiplicateur')}, "
-            f"CodeLvl={code_lvl or user_data.get('code_lvl')}, Duration={duration}",
-            ephemeral=True)
+        result = f"✅ Updated {user.mention}: XP={new_xp}, Level={level}, Life={life}, "
+        f"Multiplicator={multiplicator or user_data.get('code_multiplicateur')}, "
+        f"CodeLvl={code_lvl or user_data.get('code_lvl')}, Duration={duration}"
+
+        await interaction.followup.send(result, ephemeral=True)
+        
+        await log_users_command(
+            self=self,
+            user=interaction.user,
+            cmd="bl_edit_card",
+            output=result)
 
     # --- Commande slash pour lancer le boost ---
     @app_commands.command(name="bl_global_boost", description="Activate a temporary global XP boost")
