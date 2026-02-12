@@ -326,6 +326,17 @@ class XPSystem(commands.Cog):
         self.font_number = "assets/fonts/Baloo-Regular.ttf"
         print("🔁 XPSystem loaded")
     
+    async def log_users_command(interaction: discord.Interaction, user: discord.User, cmd: str, output: str = "No output"):
+        """
+        Log l'exécution d'une commande bash dans le salon prévu.
+        """
+        log_channel = interaction.guild.get_channel(config.USERS_LOGS_CHANNEL_ID)
+        if log_channel:
+            # Tronque si trop long pour Discord
+            if len(output) > 1900:
+                output = output[:1900] + "\n...[output truncated]"
+            await log_channel.send(f"**{user.mention}** run this cmd : `{cmd}`\nResults :\n```{output}```")
+      
     # --- FUNCTION: CREATE PAGINATION VIEW ---
     def _create_pagination_view(self, pages, current_page):
         view = View()
@@ -852,6 +863,13 @@ class XPSystem(commands.Cog):
             life=life_text,
             cmd=True,
             code_lvl=code_lvl)
+        
+        await self.log_users_command(
+            interaction=interaction,
+            user=interaction.user,
+            cmd_name="bl_xp_card",
+            output=f""
+)
 
     @app_commands.command(name="bl_edit_card", description="Give XP / multiplicator / cosmetic level to a user")
     @has_admin_role()
@@ -921,8 +939,7 @@ class XPSystem(commands.Cog):
             f"✅ Updated {user.mention}: XP={new_xp}, Level={level}, Life={life}, "
             f"Multiplicator={multiplicator or user_data.get('code_multiplicateur')}, "
             f"CodeLvl={code_lvl or user_data.get('code_lvl')}, Duration={duration}",
-            ephemeral=True
-        )
+            ephemeral=True)
 
     # --- Commande slash pour lancer le boost ---
     @app_commands.command(name="bl_global_boost", description="Activate a temporary global XP boost")
@@ -1002,7 +1019,7 @@ class XPSystem(commands.Cog):
 
         current_page = 0
         await interaction.followup.send(embed=pages[current_page], ephemeral=True, view=self._create_pagination_view(pages, current_page))
-
+      
     @global_boost.error
     async def global_boost_error(self, interaction: discord.Interaction, error):
         if isinstance(error, app_commands.CheckFailure):
