@@ -874,7 +874,7 @@ class XPSystem(commands.Cog):
             self=self,
             user=interaction.user,
             cmd="bl_xp_card",
-            outpu=f"")
+            output=f"")
 
     @app_commands.command(name="bl_edit_card", description="Give XP / multiplicator / cosmetic level to a user")
     @has_admin_role()
